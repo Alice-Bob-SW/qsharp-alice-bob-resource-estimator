@@ -8,7 +8,7 @@ use num_complex::Complex;
 use num_traits::ToPrimitive;
 use qsc::{
     interpret::{GenericReceiver, Interpreter},
-    Backend, LanguageFeatures, RuntimeCapabilityFlags, SourceMap,
+    Backend, LanguageFeatures, TargetCapabilityFlags, SourceMap,
 };
 use resource_estimator::estimates::{ErrorBudget, Overhead};
 
@@ -52,7 +52,7 @@ impl LogicalCounts {
             true,
             sources,
             qsc::PackageType::Exe,
-            RuntimeCapabilityFlags::all(),
+            TargetCapabilityFlags::all(),
             LanguageFeatures::default(),
         )
         .map_err(|_| String::from("Cannot create interpreter"))?;

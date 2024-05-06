@@ -1,14 +1,21 @@
 [package]
-name = "anbrc"
-edition.workspace = true
+name = "qsharp-alice-bob-resource-estimator"
+version = "0.1.0"
+edition = "2021"
 
 [dependencies]
 anyhow = "1.0.81"
-num-bigint.workspace = true
-num-complex.workspace = true
-num-traits.workspace = true
-qsc = { path = "../../../../compiler/qsc" }
-resource_estimator = { path = "../../../../resource_estimator" }
+num-bigint = "0.4"
+num-complex = "0.4"
+num-traits = "0.2"
+qsc = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.4.0" }
+resource_estimator = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.4.0" }
 
-[lints]
-workspace = true
+[lints.clippy]
+mod_module_files = "warn"
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+
