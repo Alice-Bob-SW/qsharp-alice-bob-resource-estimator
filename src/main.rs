@@ -44,11 +44,13 @@ fn main() -> Result<(), anyhow::Error> {
     let estimation =
         PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, overhead, budget);
     let result: AliceAndBobEstimates = estimation.estimate()?.into();
+    println!("Estimates from precomputed logical count (elliptic curve discrete logarithm):");
     println!("{result}");
 
+    println!("----------------------------------------");
+    println!("Exploration of good estimates from precomputed logical count (elliptic curve discrete logarithm):");
     let results = estimation.build_frontier()?;
 
-    println!("----------------------------------------");
     for r in results {
         println!("{}", AliceAndBobEstimates::from(r));
     }
@@ -68,6 +70,7 @@ fn main() -> Result<(), anyhow::Error> {
     let estimation =
         PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, overhead, budget);
     let result: AliceAndBobEstimates = estimation.estimate()?.into();
+    println!("Resource estimate from Q# code (ripple-carry adder):");
     println!("{result}");
 
     Ok(())
