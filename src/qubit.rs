@@ -10,8 +10,8 @@
 //! Here, κ₁/κ₂=10e-5 is assumed, and |α|² is a parameter to be optimized.
 
 pub struct CatQubit {
-    // The physical error rate is computed as κ₁/κ₂, the ratio between the one and 
-    // two photon loss rates 
+    // The physical error rate is computed as κ₁/κ₂, the ratio between the one and
+    // two photon loss rates
     pub(crate) k1_k2: f64,
 }
 

@@ -48,7 +48,7 @@ impl AliceAndBobEstimates {
     }
 
     pub fn total_error(&self) -> f64 {
-        // error is computed as "logical + magic" without the cross term since it is 
+        // error is computed as "logical + magic" without the cross term since it is
         // largely sub-leading here
         let logical = (self.num_cycles() * self.layout_overhead().logical_qubits())
             .to_f64()

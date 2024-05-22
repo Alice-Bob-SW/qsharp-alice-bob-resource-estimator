@@ -142,7 +142,7 @@ impl Iterator for CodeParameterRange {
 }
 
 impl ErrorCorrection for RepetitionCode {
-    // compute the number of physical qubits, logical qubits, cycle time, error rate 
+    // compute the number of physical qubits, logical qubits, cycle time, error rate
     // and (distance, |α|²) for the repetition code
     type Qubit = CatQubit;
     type Parameter = CodeParameter;

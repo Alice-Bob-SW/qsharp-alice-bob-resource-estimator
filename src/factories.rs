@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 //!
-//! Base struct for Toffoli magic states preparation. See arXiv:2302.06639 (Table III, p. 35) 
+//! Base struct for Toffoli magic states preparation. See arXiv:2302.06639 (Table III, p. 35)
 //!
 //!<b>Parameters (hardcoded in Default for ToffoliBuilder):</b><br>
 //!<pre>
