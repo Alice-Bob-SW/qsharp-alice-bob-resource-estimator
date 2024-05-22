@@ -1,6 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+//!
+//! Compute:
+//! <pre>
+//! - Total number of physical qubits (data+ancilla+computation+factories+routing)
+//! it's just a matter of terminology
+//! - Fraction of qubits allocated to the magic state factories
+//! - Total failure probability
+//! </pre>
+//! and print the resource estimation results.
+
 use std::{fmt::Display, ops::Deref};
 
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -9,6 +19,7 @@ use resource_estimator::estimates::{FactoryPart, Overhead, PhysicalResourceEstim
 use crate::{code::RepetitionCode, counter::LogicalCounts, factories::ToffoliFactory};
 
 pub struct AliceAndBobEstimates(
+    // compute a resource estimate
     PhysicalResourceEstimationResult<RepetitionCode, ToffoliFactory, LogicalCounts>,
 );
 
@@ -18,6 +29,7 @@ impl AliceAndBobEstimates {
     }
 
     pub fn physical_qubits(&self) -> u64 {
+        // routing qubits must be added to ensure all-to-all connectivity
         let additional_routing_qubits = 2
             * ((3 * self.layout_overhead().logical_qubits()
                 + self.toffoli_factory_part().map_or(0, FactoryPart::copies) * 6)
@@ -26,6 +38,7 @@ impl AliceAndBobEstimates {
     }
 
     pub fn factory_fraction(&self) -> f64 {
+        // fraction of physical qubits allocated to the Toffoli magic states factories
         (self
             .physical_qubits_for_factories()
             .to_f64()
@@ -35,6 +48,8 @@ impl AliceAndBobEstimates {
     }
 
     pub fn total_error(&self) -> f64 {
+        // error is computed as "logical + magic" without the cross term since it is 
+        // largely sub-leading here
         let logical = (self.num_cycles() * self.layout_overhead().logical_qubits())
             .to_f64()
             .expect("can convert volume as f64")
@@ -69,6 +84,7 @@ impl From<PhysicalResourceEstimationResult<RepetitionCode, ToffoliFactory, Logic
 }
 
 impl Display for AliceAndBobEstimates {
+    // print the final estimates
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f,)?;
         writeln!(f, "─────────────────────────────")?;

@@ -1,5 +1,34 @@
 // Copyright (c) Microsoft Corporation.
+// Copyright (c) Alice & Bob
 // Licensed under the MIT License.
+
+#![warn(missing_docs)]
+//! Estimate the ressources required for Elliptic Curve Cryptography (ECC) on a cat-based quantum
+//! processor. 
+//! 
+//! Author: Mathias Soeken
+//! 
+//! Based on É. Gouzien et al.'s article (<https://arxiv.org/abs/2302.06639>) and code
+//! (<https://github.com/ElieGouzien/elliptic_log_cat/tree/master>).
+//! 
+//! <b>Inputs:</b><br>
+//! <pre>
+//! - Qubit parameters (qubit.rs):
+//!      * k₁_k₂ = ratio one photon/two photon losses (1e-5 hardcoded)
+//! - Gates parameters (factories.rs):
+//!      * t = single physical gate time (100 ns hardcoded). Same value assumed for state preparation, measurement, CNOT and Toffoli
+//!      * gate_time ∝ time steps (89.2 time steps hardcoded) 
+//! - Repetition code parameters (code.rs):
+//!      * (κ₁/κ₂)_th: fault tolerance threshold (0.013 hardcoded)
+//! </pre>
+//! <b>Outputs:</b>
+//! <pre>
+//! - # of physical cat qubits
+//! - Runtime
+//! - Total error probability 
+//! - Repetition code distance & # of photons
+//! - Ffraction of qubits assigned to the magic state factory
+//! </pre>
 
 use std::rc::Rc;
 
@@ -29,6 +58,7 @@ fn main() -> Result<(), anyhow::Error> {
     // This value can be changed to investigate other key sizes, e.g., those in
     // arXiv:2302.06639 (Table IV, p. 37)
     let bit_size = 256;
+    // Window size for modular exponentiation (arXiv:2001.09580, sec 4.1, p. 6)
     // Value w_e as reported in arXiv:2302.06639 (Table IV, p. 37)
     let window_size = 18;
 

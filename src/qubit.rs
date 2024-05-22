@@ -1,8 +1,17 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+//!
+//! Cat qubits are characterized by:
+//! <pre>
+//! - Their average number of photons |α|²
+//! - The physical error rate κ₁/κ₂
+//! </pre>
+//! Here, κ₁/κ₂=10e-5 is assumed, and |α|² is a parameter to be optimized.
+
 pub struct CatQubit {
-    // physical error rate is computed as κ₁/κ₂
+    // The physical error rate is computed as κ₁/κ₂, the ratio between the one and 
+    // two photon loss rates 
     pub(crate) k1_k2: f64,
 }
 

@@ -1,6 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+//!
+//! This is done by calculating the following:
+//! <pre>
+//! - Qubits count
+//! - CX asymptotic count ⌈448 × bit_size³ / window_size⌉
+//! - CCX asymptotic count ⌈348 × bit_size³ / window_size⌉
+//! </pre>
+
 use std::{fs::read_to_string, path::Path};
 
 use num_bigint::BigUint;
@@ -19,7 +27,7 @@ pub struct LogicalCounts {
     pub(crate) cx_count: u64,
     pub(crate) ccx_count: u64,
 
-    free_list: Vec<usize>,
+    free_list: Vec<usize>, // holds indices of allocated qubits
 }
 
 impl LogicalCounts {
@@ -36,7 +44,9 @@ impl LogicalCounts {
     #[allow(clippy::similar_names)]
     #[must_use]
     pub fn from_elliptic_curve_crypto(bit_size: u64, window_size: u64) -> Self {
+        // number of qubits for discrete log computation, arXiv:2302.06639 (p. 22, app C.11)
         let qubit_count = 9 * bit_size + window_size + 4;
+        // asymptotic gate counts, arXiv:2302.06639 (p. 21, app C.10)
         let cx_count = (448 * bit_size.pow(3)).div_ceil(window_size);
         let ccx_count = (348 * bit_size.pow(3)).div_ceil(window_size);
 
@@ -70,6 +80,7 @@ impl LogicalCounts {
 }
 
 impl Overhead for LogicalCounts {
+    // Calculates the number of qubits and circuit depth (in # cycles) of the algorithm
     fn logical_qubits(&self) -> u64 {
         let horizontal_routing_qubits = self.qubit_count.div_ceil(2) + 1;
 
@@ -81,11 +92,11 @@ impl Overhead for LogicalCounts {
         let cx_f = self.cx_count.to_f64().expect("#CX is convertible to f64");
         let ccx_f = self.ccx_count.to_f64().expect("#CCX is convertible to f64");
 
-        // arXiv:2302.06639 (p. 30, Fig. 27); measurement is countes as 0.2
+        // arXiv:2302.06639 (p. 30, Fig. 27); measurement is counted as 0.2
         // cycles according to open source code
         let cx_cycles = 2.2;
 
-        // arXiv:2302.06639 (p. 36, Fig. 33); the cost is approximates as 3
+        // arXiv:2302.06639 (p. 36, Fig. 33); the cost is approximated as 3
         // CNOT (3 * 2.2), then 1.5 CNOT subject to measurement outcome (1.5
         // * 2.2), and measurement (0.2)
         let ccx_cycles = 10.1;
