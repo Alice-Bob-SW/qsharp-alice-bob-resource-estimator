@@ -1,107 +1,90 @@
-// Copyright (c) Microsoft Corporation.
 // Copyright (c) Alice & Bob
-// Licensed under the MIT License.
+// Licensed under the Apache License.
 
-#![warn(missing_docs)]
-//! Estimate the ressources required for Elliptic Curve Cryptography (ECC) on a cat-based quantum
-//! processor.
-//!
-//! Author: Mathias Soeken
-//!
-//! Based on É. Gouzien et al.'s article (<https://arxiv.org/abs/2302.06639>) and code
-//! (<https://github.com/ElieGouzien/elliptic_log_cat/tree/master>).
-//!
-//! <b>Inputs:</b><br>
-//! <pre>
-//! - Qubit parameters (qubit.rs):
-//!      * k₁_k₂ = ratio one photon/two photon losses (1e-5 hardcoded)
-//! - Gates parameters (factories.rs):
-//!      * t = single physical gate time (100 ns hardcoded). Same value assumed for state preparation, measurement, CNOT and Toffoli
-//!      * gate_time ∝ time steps (89.2 time steps hardcoded)
-//! - Repetition code parameters (code.rs):
-//!      * (κ₁/κ₂)_th: fault tolerance threshold (0.013 hardcoded)
-//! </pre>
-//! <b>Outputs:</b>
-//! <pre>
-//! - # of physical cat qubits
-//! - Runtime
-//! - Total error probability
-//! - Repetition code distance & # of photons
-//! - Ffraction of qubits assigned to the magic state factory
-//! </pre>
-
+use clap::{Args, Parser, Subcommand};
 use std::rc::Rc;
 
-use code::RepetitionCode;
-use counter::LogicalCounts;
-use estimates::AliceAndBobEstimates;
-use factories::ToffoliBuilder;
-use qubit::CatQubit;
+use qsharp_alice_bob_resource_estimator::{
+    AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder,
+};
 use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 
-/// Repetition code for biased error correction with a focus on phase flips
-mod code;
-/// Computes logical space-time volume overhead for resource estimation from Q#
-/// files or formulas for ECC application
-mod counter;
-/// Convenience structure to display resource estimation results
-mod estimates;
-/// Toffoli magic state factories
-mod factories;
-/// Model for cat qubits
-mod qubit;
+/// Resource estimator for Alice & Bob's architecture (cats + repetition code).
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    /// Show the frontier of reasonable parameter sets instead of a single result
+    #[arg(short, long)]
+    frontier: bool,
+
+    #[command(flatten)]
+    budget: Budget,
+
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Args)]
+#[group(required = false, multiple = false)]
+struct Budget {
+    /// Overall error budget (equally split between topological and magic state errors)
+    #[arg(long, value_name = "ERROR_PROBA")]
+    error_total: Option<f64>,
+
+    /// Detailled error budget
+    #[arg(long, num_args = 3, value_names = ["TOPOLOGICAL_ERROR", "MAGIC_ERROR", "ROTATION_ERROR"])]
+    error_budget: Option<Vec<f64>>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Reads a Q# file
+    File {
+        /// Path to the Q# file
+        filename: String,
+    },
+    /// Computes from listed resources
+    Resources {
+        /// Logical qubit number
+        qubits: u64,
+        /// number of controlled-not gates
+        cx: u64,
+        /// number of Toffoli gates
+        ccx: u64,
+    },
+}
 
 fn main() -> Result<(), anyhow::Error> {
-    // ECC pre-computed counts
-    // -----------------------
-
-    // This value can be changed to investigate other key sizes, e.g., those in
-    // arXiv:2302.06639 (Table IV, p. 37)
-    let bit_size = 256;
-    // Window size for modular exponentiation (arXiv:2001.09580, sec 4.1, p. 6)
-    // Value w_e as reported in arXiv:2302.06639 (Table IV, p. 37)
-    let window_size = 18;
+    let args = Cli::parse();
 
     let qubit = CatQubit::new();
     let qec = RepetitionCode::new();
     let builder = ToffoliBuilder::default();
-    let overhead = Rc::new(LogicalCounts::from_elliptic_curve_crypto(
-        bit_size,
-        window_size,
-    ));
-    let budget = ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0);
+    let budget = match (args.budget.error_total, args.budget.error_budget) {
+        (Some(proba), None) => ErrorBudget::new(proba * 0.5, proba * 0.5, 0.0),
+        (None, Some(vec)) => ErrorBudget::new(vec[0], vec[1], vec[2]),
+        (None, None) => ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0),
+        _ => unreachable!("Clap should have catched that!"),
+    };
 
+    let overhead = Rc::new(match args.command {
+        Commands::File { filename } => {
+            LogicalCounts::from_qsharp(filename).map_err(anyhow::Error::msg)?
+        }
+        Commands::Resources { qubits, cx, ccx } => LogicalCounts::new(qubits, cx, ccx),
+    });
     let estimation =
         PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, overhead, budget);
-    let result: AliceAndBobEstimates = estimation.estimate()?.into();
-    println!("Estimates from precomputed logical count (elliptic curve discrete logarithm):");
-    println!("{result}");
 
-    println!("----------------------------------------");
-    println!("Exploration of good estimates from precomputed logical count (elliptic curve discrete logarithm):");
-    let results = estimation.build_frontier()?;
-
-    for r in results {
-        println!("{}", AliceAndBobEstimates::from(r));
+    if args.frontier {
+        let results = estimation.build_frontier()?;
+        for r in results {
+            println!("{}", AliceAndBobEstimates::from(r));
+        }
+    } else {
+        let result: AliceAndBobEstimates = estimation.estimate()?.into();
+        println!("{result}");
     }
-    println!("----------------------------------------");
-
-    // Resource estimation from Q#
-    // ---------------------------
-
-    let filename = format!("{}/qsharp/Adder.qs", env!("CARGO_MANIFEST_DIR"));
-
-    let qubit = CatQubit::new();
-    let qec = RepetitionCode::new();
-    let builder = ToffoliBuilder::default();
-    let overhead = Rc::new(LogicalCounts::from_qsharp(filename).map_err(anyhow::Error::msg)?);
-    let budget = ErrorBudget::new(0.001 * 0.5, 0.001 * 0.5, 0.0);
-
-    let estimation =
-        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, overhead, budget);
-    let result: AliceAndBobEstimates = estimation.estimate()?.into();
-    println!("Resource estimate from Q# code (ripple-carry adder):");
-    println!("{result}");
 
     Ok(())
 }

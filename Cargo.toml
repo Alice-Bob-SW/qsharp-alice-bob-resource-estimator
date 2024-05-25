@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.81"
+clap = { version = "4.5.4", features = ["derive"] }
 num-bigint = "0.4"
 num-complex = "0.4"
 num-traits = "0.2"

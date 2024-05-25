@@ -11,5 +11,5 @@ Big thanks to Mathias Soeken for having written the initial version of this repo
 Installation
 ------------
 This is a standard Cargo crate.
-Once rust is installed, `cargo run` should do its magic.
-This crate is designed as a library, the executable part being just an example.
+Once rust is installed, `cargo run --example=main` should do its magic and run the example.
+This crate is designed as a library, and also contains a standalone executable that estimates resources from either a Q# file or from numbers of logical qubits, CX and CCX.
