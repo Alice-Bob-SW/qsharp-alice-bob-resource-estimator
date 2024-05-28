@@ -20,6 +20,7 @@ use qsc::{
 };
 use resource_estimator::estimates::{ErrorBudget, Overhead};
 
+/// Count the number of qubits, CX and CCX gates
 #[allow(clippy::struct_field_names)]
 #[derive(Clone, Default)]
 pub struct LogicalCounts {
@@ -31,6 +32,7 @@ pub struct LogicalCounts {
 }
 
 impl LogicalCounts {
+    /// Store logical qubits and gates counts
     #[allow(clippy::similar_names)]
     pub fn new(qubit_count: u64, cx_count: u64, ccx_count: u64) -> Self {
         Self {
@@ -41,6 +43,7 @@ impl LogicalCounts {
         }
     }
 
+    /// Compute logical qubits and gates counts
     #[allow(clippy::similar_names)]
     #[must_use]
     pub fn from_elliptic_curve_crypto(bit_size: u64, window_size: u64) -> Self {
@@ -53,6 +56,7 @@ impl LogicalCounts {
         Self::new(qubit_count, cx_count, ccx_count)
     }
 
+    /// Read Q# estimates
     pub fn from_qsharp(filename: impl AsRef<Path>) -> Result<Self, String> {
         let content = read_to_string(filename).map_err(|_| String::from("Cannot read filename"))?;
 

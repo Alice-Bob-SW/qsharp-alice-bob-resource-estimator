@@ -47,9 +47,9 @@ enum Commands {
     Resources {
         /// Logical qubit number
         qubits: u64,
-        /// number of controlled-not gates
+        /// Number of controlled-not gates
         cx: u64,
-        /// number of Toffoli gates
+        /// Number of Toffoli gates
         ccx: u64,
     },
 }

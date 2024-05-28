@@ -19,6 +19,7 @@ use std::{borrow::Cow, rc::Rc};
 
 use crate::{code::CodeParameter, CatQubit, RepetitionCode};
 
+/// Struct for Toffoli magic states factories
 #[derive(Clone, PartialEq)]
 pub struct ToffoliFactory {
     code_distance: usize,
@@ -29,10 +30,12 @@ pub struct ToffoliFactory {
 }
 
 impl ToffoliFactory {
+    /// Logical error probability of the magic state preparation
     pub fn error_probability(&self) -> f64 {
         self.error_probability
     }
 
+    /// Spacetime volume of the factory
     pub fn normalized_volume(&self) -> u64 {
         use estimates::Factory;
 
@@ -90,6 +93,7 @@ impl PartialOrd for ToffoliFactory {
     }
 }
 
+/// Contain and pass physical parameters to the factory
 pub struct ToffoliBuilder {
     factories: Vec<ToffoliFactory>,
     lowest_error_probability: f64,

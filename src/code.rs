@@ -17,12 +17,14 @@ use resource_estimator::estimates::ErrorCorrection;
 
 use crate::qubit::CatQubit;
 
+/// Store and compute physical properties of a 1D repetition code
 pub struct RepetitionCode {
     p_threshold: f64,
 }
 
 impl RepetitionCode {
     #[must_use]
+    /// Default initialisation with threshold=0.013
     pub fn new() -> Self {
         Self::default()
     }
@@ -71,6 +73,7 @@ impl Default for RepetitionCode {
     }
 }
 
+/// Struct storing the code distance and average photon number |α|²
 #[derive(Clone)]
 pub struct CodeParameter {
     distance: u64,
@@ -80,6 +83,7 @@ pub struct CodeParameter {
 }
 
 impl CodeParameter {
+    /// Set new values for the code parameters (distance, |α|²)
     #[must_use]
     pub fn new(distance: u64, alpha_sq: f64) -> Self {
         Self { distance, alpha_sq }

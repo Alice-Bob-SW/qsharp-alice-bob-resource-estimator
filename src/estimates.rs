@@ -5,7 +5,6 @@
 //! Compute:
 //! <pre>
 //! - Total number of physical qubits (data+ancilla+computation+factories+routing)
-//! it's just a matter of terminology
 //! - Fraction of qubits allocated to the magic state factories
 //! - Total failure probability
 //! </pre>
@@ -18,18 +17,21 @@ use resource_estimator::estimates::{FactoryPart, Overhead, PhysicalResourceEstim
 
 use crate::{code::RepetitionCode, counter::LogicalCounts, factories::ToffoliFactory};
 
+/// Compute resources estimates for Alice & Bob's cat qubits
 pub struct AliceAndBobEstimates(
     // compute a resource estimate
     PhysicalResourceEstimationResult<RepetitionCode, ToffoliFactory, LogicalCounts>,
 );
 
 impl AliceAndBobEstimates {
+    /// Store the number of factories
     pub fn toffoli_factory_part(&self) -> Option<&FactoryPart<ToffoliFactory>> {
         self.factory_parts()[0].as_ref()
     }
 
+    /// Count the number of physical qubits
     pub fn physical_qubits(&self) -> u64 {
-        // routing qubits must be added to ensure all-to-all connectivity
+        // Routing qubits must be added to ensure all-to-all connectivity
         let additional_routing_qubits = 2
             * ((3 * self.layout_overhead().logical_qubits()
                 + self.toffoli_factory_part().map_or(0, FactoryPart::copies) * 6)
@@ -37,8 +39,8 @@ impl AliceAndBobEstimates {
         self.0.physical_qubits() + additional_routing_qubits
     }
 
+    /// Compute the fraction of physical qubits allocated to the Toffoli magic states factories
     pub fn factory_fraction(&self) -> f64 {
-        // fraction of physical qubits allocated to the Toffoli magic states factories
         (self
             .physical_qubits_for_factories()
             .to_f64()
@@ -47,9 +49,10 @@ impl AliceAndBobEstimates {
             * 100.0
     }
 
+    /// Compute the total error of the magic state preparation
     pub fn total_error(&self) -> f64 {
         // error is computed as "logical + magic" without the cross term since it is
-        // largely sub-leading here
+        // largely sub-leading here, and negative anyway
         let logical = (self.num_cycles() * self.layout_overhead().logical_qubits())
             .to_f64()
             .expect("can convert volume as f64")
