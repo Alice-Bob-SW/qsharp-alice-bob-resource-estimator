@@ -31,7 +31,7 @@ impl AliceAndBobEstimates {
 
     /// Count the number of physical qubits
     pub fn physical_qubits(&self) -> u64 {
-        // Routing qubits must be added to ensure all-to-all connectivity
+        // routing qubits must be added to ensure all-to-all connectivity
         let additional_routing_qubits = 2
             * ((3 * self.layout_overhead().logical_qubits()
                 + self.toffoli_factory_part().map_or(0, FactoryPart::copies) * 6)
@@ -51,7 +51,7 @@ impl AliceAndBobEstimates {
 
     /// Compute the total error of the magic state preparation
     pub fn total_error(&self) -> f64 {
-        // error is computed as "logical + magic" without the cross term since it is
+        // error is computed as 'logical + magic' without the cross term since it is
         // largely sub-leading here, and negative anyway
         let logical = (self.num_cycles() * self.layout_overhead().logical_qubits())
             .to_f64()

@@ -84,7 +84,7 @@ impl LogicalCounts {
 }
 
 impl Overhead for LogicalCounts {
-    // Calculates the number of qubits and circuit depth (in # cycles) of the algorithm
+    // calculates the number of qubits and circuit depth (in # cycles) of the algorithm
     fn logical_qubits(&self) -> u64 {
         let horizontal_routing_qubits = self.qubit_count.div_ceil(2) + 1;
 

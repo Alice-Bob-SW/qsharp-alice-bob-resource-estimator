@@ -3,7 +3,7 @@
 // Licensed under the MIT License.
 
 #![warn(missing_docs)]
-//! Estimate the ressources required for Elliptic Curve Cryptography (ECC) on a cat-based quantum
+//! Estimate the resources required for Elliptic Curve Cryptography (ECC) on a cat-based quantum
 //! processor.
 //!
 //! Author: Mathias Soeken
@@ -27,7 +27,7 @@
 //! - Runtime
 //! - Total error probability
 //! - Repetition code distance & # of photons
-//! - Ffraction of qubits assigned to the magic state factory
+//! - Fraction of qubits assigned to the magic state factory
 //! </pre>
 
 pub use code::RepetitionCode;

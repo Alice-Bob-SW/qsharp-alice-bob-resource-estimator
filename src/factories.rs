@@ -4,14 +4,14 @@
 //!
 //! Base struct for Toffoli magic states preparation. See arXiv:2302.06639 (Table III, p. 35)
 //!
-//!<b>Parameters (hardcoded in Default for ToffoliBuilder):</b><br>
-//!<pre>
-//!- code_distance: distance of the repetition code
-//!- alpha_sq: average number of photons
-//!- error_probability: logical error probability of the magic state prepatation
-//!- steps: number of physical gates
-//!- acceptance_probability: success probability of the magic state preparation
-//!</pre>
+//! <b>Parameters (hardcoded in Default for ToffoliBuilder):</b><br>
+//! <pre>
+//! - code_distance: distance of the repetition code
+//! - alpha_sq: average number of photons
+//! - error_probability: logical error probability of the magic state prepatation
+//! - steps: number of physical gates
+//! - acceptance_probability: success probability of the magic state preparation
+//! </pre>
 
 use num_traits::FromPrimitive;
 use resource_estimator::estimates::{self, FactoryBuilder};
@@ -49,7 +49,7 @@ impl estimates::Factory for ToffoliFactory {
     type Parameter = CodeParameter;
 
     fn physical_qubits(&self) -> u64 {
-        // A Toffoli factory requires 4 logical qubits, arXiv:2302.06639 (p. 27)
+        // each Toffoli factory requires 4 logical qubits, arXiv:2302.06639 (p. 27)
         let num_logical_qubits: u64 = 4;
         let horizontal_routing_qubits = num_logical_qubits.div_ceil(4) + 1;
 
@@ -59,7 +59,7 @@ impl estimates::Factory for ToffoliFactory {
     fn duration(&self) -> u64 {
         let t = 100.0; // 1/κ₂ = execution time of one cycle [nanoseconds]
 
-        // the more accurate of # time steps 89.2 was taken from the Github code (vs 89 in arXiv:2302.06639 (p. 32))
+        // the more accurate # of time steps 89.2 was taken from the Github code (vs 89 in arXiv:2302.06639 (p. 32))
         let gate_time = (89.2 * t / self.alpha_sq) / self.acceptance_probability;
 
         f64::from_usize(self.steps)

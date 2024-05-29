@@ -24,7 +24,7 @@ pub struct RepetitionCode {
 
 impl RepetitionCode {
     #[must_use]
-    /// Default initialisation with threshold=0.013
+    /// Default initialization with threshold=0.013
     pub fn new() -> Self {
         Self::default()
     }
