@@ -47,9 +47,9 @@ impl LogicalCounts {
     #[allow(clippy::similar_names)]
     #[must_use]
     pub fn from_elliptic_curve_crypto(bit_size: u64, window_size: u64) -> Self {
-        // number of qubits for discrete log computation, arXiv:2302.06639 (p. 22, app C.11)
+        // Number of qubits for discrete log computation, arXiv:2302.06639 (p. 22, app C.11)
         let qubit_count = 9 * bit_size + window_size + 4;
-        // asymptotic gate counts, arXiv:2302.06639 (p. 21, app C.10)
+        // Asymptotic gate counts, arXiv:2302.06639 (p. 21, app C.10)
         let cx_count = (448 * bit_size.pow(3)).div_ceil(window_size);
         let ccx_count = (348 * bit_size.pow(3)).div_ceil(window_size);
 
@@ -84,7 +84,7 @@ impl LogicalCounts {
 }
 
 impl Overhead for LogicalCounts {
-    // calculates the number of qubits and circuit depth (in # cycles) of the algorithm
+    // Calculates the number of qubits and circuit depth (in # of cycles) of the algorithm
     fn logical_qubits(&self) -> u64 {
         let horizontal_routing_qubits = self.qubit_count.div_ceil(2) + 1;
 

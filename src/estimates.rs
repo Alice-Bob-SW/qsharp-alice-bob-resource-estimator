@@ -19,7 +19,7 @@ use crate::{code::RepetitionCode, counter::LogicalCounts, factories::ToffoliFact
 
 /// Compute resources estimates for Alice & Bob's cat qubits
 pub struct AliceAndBobEstimates(
-    // compute a resource estimate
+    // Compute a resource estimate
     PhysicalResourceEstimationResult<RepetitionCode, ToffoliFactory, LogicalCounts>,
 );
 
@@ -31,7 +31,7 @@ impl AliceAndBobEstimates {
 
     /// Count the number of physical qubits
     pub fn physical_qubits(&self) -> u64 {
-        // routing qubits must be added to ensure all-to-all connectivity
+        // Routing qubits must be added to ensure all-to-all connectivity
         let additional_routing_qubits = 2
             * ((3 * self.layout_overhead().logical_qubits()
                 + self.toffoli_factory_part().map_or(0, FactoryPart::copies) * 6)
@@ -51,7 +51,7 @@ impl AliceAndBobEstimates {
 
     /// Compute the total error of the magic state preparation
     pub fn total_error(&self) -> f64 {
-        // error is computed as 'logical + magic' without the cross term since it is
+        // Error is computed as 'logical + magic' without the cross term since it is
         // largely sub-leading here, and negative anyway
         let logical = (self.num_cycles() * self.layout_overhead().logical_qubits())
             .to_f64()
@@ -87,11 +87,11 @@ impl From<PhysicalResourceEstimationResult<RepetitionCode, ToffoliFactory, Logic
 }
 
 impl Display for AliceAndBobEstimates {
-    // print the final estimates
+    // Print the final estimates
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f,)?;
         writeln!(f, "─────────────────────────────")?;
-        writeln!(f, "#physical qubits:    {}", self.physical_qubits())?;
+        writeln!(f, "# physical qubits:    {}", self.physical_qubits())?;
         writeln!(
             f,
             "runtime:             {:.2} hrs",

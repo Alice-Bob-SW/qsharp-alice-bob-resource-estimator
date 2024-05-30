@@ -11,7 +11,7 @@
 
 /// Basic struct for cat qubits
 pub struct CatQubit {
-    // the physical error rate is computed as κ₁/κ₂, the ratio between the one and
+    // The physical error rate is computed as κ₁/κ₂, the ratio between the one and
     // two photon loss rates
     pub(crate) k1_k2: f64,
 }
@@ -19,7 +19,7 @@ pub struct CatQubit {
 impl Default for CatQubit {
     /// Set κ₁/κ₂ to a default value
     fn default() -> Self {
-        // by default, we assume k1_k2 of 1e-5, arXiv:2302.06639 (p. 2).
+        // By default, we assume k1_k2 of 1e-5, arXiv:2302.06639 (p. 2).
         Self { k1_k2: 1e-5 }
     }
 }

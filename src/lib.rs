@@ -11,8 +11,9 @@
 //! Based on É. Gouzien et al.'s article (<https://arxiv.org/abs/2302.06639>) and code
 //! (<https://github.com/ElieGouzien/elliptic_log_cat/tree/master>).
 //!
-//! <b>Inputs:</b><br>
+//! <b>Takes:</b><br>
 //! <pre>
+//! - A Q# file giving the required number of logical qubits for the algorithm (qsharp/Adder.qs)
 //! - Qubit parameters (qubit.rs):
 //!      * k₁_k₂ = ratio one photon/two photon losses (1e-5 hardcoded)
 //! - Gates parameters (factories.rs):
@@ -21,7 +22,7 @@
 //! - Repetition code parameters (code.rs):
 //!      * (κ₁/κ₂)_th: fault tolerance threshold (0.013 hardcoded)
 //! </pre>
-//! <b>Outputs:</b>
+//! <b>Provides:</b>
 //! <pre>
 //! - # of physical cat qubits
 //! - Runtime

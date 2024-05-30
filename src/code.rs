@@ -40,7 +40,7 @@ impl RepetitionCode {
         let prefactor = 5.6e-2;
         let exponent = (i32::from_u64(parameter.distance)? + 1) / 2;
 
-        // logical phase-flip error rate per cycle of the repetition code
+        // Logical phase-flip error rate per cycle of the repetition code
         // arXiv:2302.06639 (p. 3, eq. 4)
         Some(
             prefactor
@@ -55,7 +55,7 @@ impl RepetitionCode {
         // number of CX gates in a repetition code cycle
         let ncx = 2 * (parameter.distance - 1);
 
-        // bit-flip error probability of a CX gate (numerically estimated using
+        // Bit-flip error probability of a CX gate (numerically estimated using
         // full process tomography), arXiv:2302.06639 (p. 26, eq. D8)
         let pcx = 0.5 * (-2.0 * parameter.alpha_sq).exp();
 
@@ -65,7 +65,7 @@ impl RepetitionCode {
 
 impl Default for RepetitionCode {
     fn default() -> Self {
-        // threshold (κ₁/κ₂)_th for the repetition code correction
+        // Threshold (κ₁/κ₂)_th for the repetition code correction
         // arXiv:2302.06639 (p. 4, p. 28, Fig. 26)
         let p_threshold = 0.013;
 
@@ -73,11 +73,11 @@ impl Default for RepetitionCode {
     }
 }
 
-/// Struct storing the code distance and average photon number |α|²
+/// Store the code distance and average photon number |α|²
 #[derive(Clone)]
 pub struct CodeParameter {
     distance: u64,
-    // amplitude ɑ arXiv:2302.06639 (p. 3)
+    // Amplitude ɑ arXiv:2302.06639 (p. 3),
     // average number of photons |ɑ|²
     alpha_sq: f64,
 }
@@ -146,8 +146,9 @@ impl Iterator for CodeParameterRange {
 }
 
 impl ErrorCorrection for RepetitionCode {
-    // compute the number of physical qubits, logical qubits, cycle time, error rate
-    // and (distance, |α|²) for the repetition code
+    // Compute the number of physical qubits, cycle time, error rate
+    // and (distance, |α|²) for the repetition code,
+    // and check that the number of physical qubits is initialized
     type Qubit = CatQubit;
     type Parameter = CodeParameter;
 
@@ -158,11 +159,13 @@ impl ErrorCorrection for RepetitionCode {
         CodeParameterRange::new(lower_bound, 49, 30.0)
     }
 
+    /// Number of physical qubits per instance of the repetition code (2 x distance - 1)
     fn physical_qubits(&self, parameter: &Self::Parameter) -> Result<u64, String> {
         // arXiv:2302.06639 (p. 27)
         Ok(2 * parameter.distance - 1)
     }
 
+    /// Number of logical qubits per instance of the repetition code (1)
     fn logical_qubits(&self, _parameter: &Self::Parameter) -> Result<u64, String> {
         Ok(1)
     }
@@ -188,7 +191,7 @@ impl ErrorCorrection for RepetitionCode {
         ) {
             // arXiv:2302.06639 (p. 4, eq. 3 and app E2, p. 27)
             // this is eq. 3 in a more compact form
-            Ok(code_distance_f64 * (lzp + lxp)) // first: logical phase-flip, second part: logical
+            Ok(code_distance_f64 * (lzp + lxp)) // First: logical phase-flip, second part: logical
                                                 // bit-flip
         } else {
             Err("cannot compute logical failure probability".into())

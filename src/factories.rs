@@ -49,7 +49,7 @@ impl estimates::Factory for ToffoliFactory {
     type Parameter = CodeParameter;
 
     fn physical_qubits(&self) -> u64 {
-        // each Toffoli factory requires 4 logical qubits, arXiv:2302.06639 (p. 27)
+        // Each Toffoli factory requires 4 logical qubits, arXiv:2302.06639 (p. 27)
         let num_logical_qubits: u64 = 4;
         let horizontal_routing_qubits = num_logical_qubits.div_ceil(4) + 1;
 
@@ -59,7 +59,7 @@ impl estimates::Factory for ToffoliFactory {
     fn duration(&self) -> u64 {
         let t = 100.0; // 1/κ₂ = execution time of one cycle [nanoseconds]
 
-        // the more accurate # of time steps 89.2 was taken from the Github code (vs 89 in arXiv:2302.06639 (p. 32))
+        // The more accurate # of time steps 89.2 was taken from the Github code (vs 89 in arXiv:2302.06639 (p. 32))
         let gate_time = (89.2 * t / self.alpha_sq) / self.acceptance_probability;
 
         f64::from_usize(self.steps)
