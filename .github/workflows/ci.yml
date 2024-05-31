@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+env: 
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: full
+
+jobs:
+  build_and_test:
+    name: Check, compile, run and doc - ${{matrix.os}} - ${{matrix.toolchain}}
+    runs-on:  ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install rust (${{matrix.os}}-${{matrix.toolchain}})
+        run: rustup update ${{matrix.toolchain}} && rustup default ${{matrix.toolchain}}
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo
+          key: ${{runner.os}}-cargo-registry-${{github.sha}}
+          restore-keys: ${{runner.os}}-cargo-registry-
+      - name: Cache cargo target
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{github.sha}}
+          restore-keys: ${{runner.os}}-cargo-target-
+      - name: fmt
+        continue-on-error: true
+        run: cargo fmt --check
+      - name: clippy
+        continue-on-error: true
+        run: cargo clippy -- -D warnings 
+      - name: Build debug
+        run: cargo build
+      - name: build release
+        run: cargo build --release
+      - name: Save executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.os}}-qsharp-alice-bob-resource-estimator
+          path: target/release/qsharp-alice-bob-resource-estimator${{ runner.os == 'Windows' && '.exe' || ''}} 
+      - name: test
+        run: cargo test
+      - name: example elliptic_log
+        run: cargo run --example=elliptic_log
+      - name: example from_qsharp
+        run: cargo run --example=from_qsharp
+      - name: doc
+        run: cargo doc --release --no-deps
+      - name: Save doc
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.os}}-doc
+          path: target/doc
