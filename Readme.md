@@ -1,3 +1,5 @@
+[![ci](https://github.com/Alice-Bob-SW/qsharp-alice-bob-resource-estimator/actions/workflows/ci.yml/badge.svg)](https://github.com/Alice-Bob-SW/qsharp-alice-bob-resource-estimator/actions/workflows/ci.yml)
+
 Q# resource estimator for Alice & Bob's architecture
 =====================================================
 
@@ -11,5 +13,12 @@ Big thanks to Mathias Soeken for having written the initial version of this repo
 Installation
 ------------
 This is a standard Cargo crate.
-Once rust is installed, `cargo run --example=main` should do its magic and run the example.
+Once rust is installed, `cargo build --release` will do its magic and build the estimator. The executable files are also available from the CI artifacts.
+
+Usage
+-----
 This crate is designed as a library, and also contains a standalone executable that estimates resources from either a Q# file or from numbers of logical qubits, CX and CCX.
+Use the subcommand `help` to have the documentation of the executable.
+
+Examples can be run with `cargo run --example=elliptic_log` and `cargo run --example=from_qsharp`.
+
