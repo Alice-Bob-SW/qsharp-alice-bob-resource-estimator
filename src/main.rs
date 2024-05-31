@@ -67,14 +67,14 @@ fn main() -> Result<(), anyhow::Error> {
         _ => unreachable!("Clap should have catched that!"),
     };
 
-    let overhead = Rc::new(match args.command {
+    let count = match args.command {
         Commands::File { filename } => {
             LogicalCounts::from_qsharp(filename).map_err(anyhow::Error::msg)?
         }
         Commands::Resources { qubits, cx, ccx } => LogicalCounts::new(qubits, cx, ccx),
-    });
+    };
     let estimation =
-        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, overhead, budget);
+        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, Rc::new(count), budget);
 
     if args.frontier {
         let results = estimation.build_frontier()?;

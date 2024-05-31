@@ -25,11 +25,13 @@ pub struct AliceAndBobEstimates(
 
 impl AliceAndBobEstimates {
     /// Store the number of factories
+    #[must_use]
     pub fn toffoli_factory_part(&self) -> Option<&FactoryPart<ToffoliFactory>> {
         self.factory_parts()[0].as_ref()
     }
 
     /// Count the number of physical qubits
+    #[must_use]
     pub fn physical_qubits(&self) -> u64 {
         // Routing qubits must be added to ensure all-to-all connectivity
         let additional_routing_qubits = 2
@@ -40,6 +42,7 @@ impl AliceAndBobEstimates {
     }
 
     /// Compute the fraction of physical qubits allocated to the Toffoli magic states factories
+    #[must_use]
     pub fn factory_fraction(&self) -> f64 {
         (self
             .physical_qubits_for_factories()
@@ -50,6 +53,7 @@ impl AliceAndBobEstimates {
     }
 
     /// Compute the total error of the magic state preparation
+    #[must_use]
     pub fn total_error(&self) -> f64 {
         // Error is computed as 'logical + magic' without the cross term since it is
         // largely sub-leading here, and negative anyway

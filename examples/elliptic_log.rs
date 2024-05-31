@@ -11,7 +11,9 @@
 
 use std::rc::Rc;
 
-use qsharp_alice_bob_resource_estimator::{RepetitionCode, LogicalCounts, AliceAndBobEstimates, ToffoliBuilder, CatQubit};
+use qsharp_alice_bob_resource_estimator::{
+    AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder,
+};
 use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 
 fn main() -> Result<(), anyhow::Error> {
@@ -28,14 +30,11 @@ fn main() -> Result<(), anyhow::Error> {
     let qubit = CatQubit::new();
     let qec = RepetitionCode::new();
     let builder = ToffoliBuilder::default();
-    let overhead = Rc::new(LogicalCounts::from_elliptic_curve_crypto(
-        bit_size,
-        window_size,
-    ));
+    let count = LogicalCounts::from_elliptic_curve_crypto(bit_size, window_size);
     let budget = ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0);
 
     let estimation =
-        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, overhead, budget);
+        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, Rc::new(count), budget);
     let result: AliceAndBobEstimates = estimation.estimate()?.into();
     println!("Estimates from precomputed logical count (elliptic curve discrete logarithm):");
     println!("{result}");

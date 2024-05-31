@@ -7,7 +7,9 @@
 
 use std::rc::Rc;
 
-use qsharp_alice_bob_resource_estimator::{RepetitionCode, LogicalCounts, AliceAndBobEstimates, ToffoliBuilder, CatQubit};
+use qsharp_alice_bob_resource_estimator::{
+    AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder,
+};
 use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 
 fn main() -> Result<(), anyhow::Error> {
@@ -19,11 +21,11 @@ fn main() -> Result<(), anyhow::Error> {
     let qubit = CatQubit::new();
     let qec = RepetitionCode::new();
     let builder = ToffoliBuilder::default();
-    let overhead = Rc::new(LogicalCounts::from_qsharp(filename).map_err(anyhow::Error::msg)?);
+    let count = LogicalCounts::from_qsharp(filename).map_err(anyhow::Error::msg)?;
     let budget = ErrorBudget::new(0.001 * 0.5, 0.001 * 0.5, 0.0);
 
     let estimation =
-        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, overhead, budget);
+        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, Rc::new(count), budget);
     let result: AliceAndBobEstimates = estimation.estimate()?.into();
     println!("Resource estimate from Q# code (ripple-carry adder):");
     println!("{result}");

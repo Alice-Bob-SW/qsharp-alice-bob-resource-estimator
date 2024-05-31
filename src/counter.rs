@@ -16,13 +16,14 @@ use num_complex::Complex;
 use num_traits::ToPrimitive;
 use qsc::{
     interpret::{GenericReceiver, Interpreter},
-    Backend, LanguageFeatures, TargetCapabilityFlags, SourceMap,
+    Backend, LanguageFeatures, SourceMap, TargetCapabilityFlags,
 };
 use resource_estimator::estimates::{ErrorBudget, Overhead};
 
 /// Count the number of qubits, CX and CCX gates
 #[allow(clippy::struct_field_names)]
 #[derive(Clone, Default)]
+#[must_use]
 pub struct LogicalCounts {
     pub(crate) qubit_count: u64,
     pub(crate) cx_count: u64,
@@ -45,7 +46,6 @@ impl LogicalCounts {
 
     /// Compute logical qubits and gates counts
     #[allow(clippy::similar_names)]
-    #[must_use]
     pub fn from_elliptic_curve_crypto(bit_size: u64, window_size: u64) -> Self {
         // Number of qubits for discrete log computation, arXiv:2302.06639 (p. 22, app C.11)
         let qubit_count = 9 * bit_size + window_size + 4;

@@ -31,11 +31,13 @@ pub struct ToffoliFactory {
 
 impl ToffoliFactory {
     /// Logical error probability of the magic state preparation
+    #[must_use]
     pub fn error_probability(&self) -> f64 {
         self.error_probability
     }
 
     /// Spacetime volume of the factory
+    #[must_use]
     pub fn normalized_volume(&self) -> u64 {
         use estimates::Factory;
 
