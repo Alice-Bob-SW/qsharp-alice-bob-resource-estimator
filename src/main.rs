@@ -1,6 +1,10 @@
 // Copyright (c) Alice & Bob
 // Licensed under the Apache License.
 
+//! Command line interface to the resource estimator for cat-based quantum
+//! computer with repetition code. The command-line is self documented, please
+//! use it with subcommand `help` to learn its usage.
+
 use clap::{Args, Parser, Subcommand};
 use std::rc::Rc;
 
@@ -13,7 +17,7 @@ use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    /// Show the frontier of reasonable parameter sets instead of a single result
+    /// Show the frontier of good parameter sets instead of a single result.
     #[arg(short, long)]
     frontier: bool,
 
@@ -27,23 +31,24 @@ struct Cli {
 #[derive(Args)]
 #[group(required = false, multiple = false)]
 struct Budget {
-    /// Overall error budget (equally split between topological and magic state errors)
+    /// Overall error budget (equally split between topological and magic state
+    /// errors) [default: 0.333].
     #[arg(long, value_name = "ERROR_PROBA")]
     error_total: Option<f64>,
 
-    /// Detailled error budget
+    /// Detailed error budget
     #[arg(long, num_args = 3, value_names = ["TOPOLOGICAL_ERROR", "MAGIC_ERROR", "ROTATION_ERROR"])]
     error_budget: Option<Vec<f64>>,
 }
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Reads a Q# file
+    /// Read a Q# file
     File {
         /// Path to the Q# file
         filename: String,
     },
-    /// Computes from listed resources
+    /// Compute from listed resources
     Resources {
         /// Logical qubit number
         qubits: u64,
@@ -63,8 +68,9 @@ fn main() -> Result<(), anyhow::Error> {
     let budget = match (args.budget.error_total, args.budget.error_budget) {
         (Some(proba), None) => ErrorBudget::new(proba * 0.5, proba * 0.5, 0.0),
         (None, Some(vec)) => ErrorBudget::new(vec[0], vec[1], vec[2]),
+        // TODO: give default handling to clap.
         (None, None) => ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0),
-        _ => unreachable!("Clap should have catched that!"),
+        _ => unreachable!("Clap should have caught that!"),
     };
 
     let count = match args.command {

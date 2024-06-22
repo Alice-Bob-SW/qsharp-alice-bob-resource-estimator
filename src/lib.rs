@@ -3,33 +3,46 @@
 // Licensed under the MIT License.
 
 #![warn(missing_docs)]
-//! Estimate the resources required for Elliptic Curve Cryptography (ECC) on a cat-based quantum
-//! processor.
+//! Resource estimator for a cat-based quantum processor using repetition code
+//! and preparation of Toffoli magical states by fault-tolerant measurement.
 //!
-//! Author: Mathias Soeken
-//!
-//! Based on É. Gouzien et al.'s article (<https://arxiv.org/abs/2302.06639>) and code
+//! Hypothesis on the architecture, hardware and code performances are based on
+//! É. Gouzien et al.'s article (<https://arxiv.org/abs/2302.06639>) and code
 //! (<https://github.com/ElieGouzien/elliptic_log_cat/tree/master>).
 //!
-//! <b>Takes:</b><br>
-//! <pre>
-//! - A Q# file giving the required number of logical qubits for the algorithm (qsharp/Adder.qs)
-//! - Qubit parameters (qubit.rs):
-//!      * k₁_k₂ = ratio one photon/two photon losses (1e-5 hardcoded)
-//! - Gates parameters (factories.rs):
-//!      * t = single physical gate time (100 ns hardcoded). Same value assumed for state preparation, measurement, CNOT and Toffoli
-//!      * gate_time ∝ time steps (89.2 time steps hardcoded)
-//! - Repetition code parameters (code.rs):
-//!      * (κ₁/κ₂)_th: fault tolerance threshold (0.013 hardcoded)
-//! </pre>
-//! <b>Provides:</b>
-//! <pre>
-//! - # of physical cat qubits
-//! - Runtime
-//! - Total error probability
-//! - Repetition code distance & # of photons
-//! - Fraction of qubits assigned to the magic state factory
-//! </pre>
+//! ### Notations:
+//! - κ₁: one photon loss rate
+//! - κ₂: two photons loss rate
+//! - |α|²: average number of photons
+//!
+//! ### Assumes:
+//! - architecture as described in
+//!   [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)
+//! - 1/κ₂ = 100 ns
+//! - κ₁/κ₂ = 1e-5
+//! - no saturation of bit-flip
+//!
+//! ### Takes:
+//! - specification of the algorithmic required resources, either entered
+//!   directly, either deduced from a Q# file (see `example/from_qsharp.rs`).
+//!   * number of logical qubits
+//!   * number of logical CX
+//!   * number of logical CCX
+//! - error budget:
+//!   * maximum total topological error probability
+//!   * maximum total error probability from magic states preparations
+//!   * maximum total error probability from rotations (unused)
+//!
+//! ### Provides:
+//! - number of physical cat qubits
+//! - runtime
+//! - total error probability
+//! - Code parameters:
+//!     * repetition code distance
+//!     * average number of photons |α|² in each cat
+//! - fraction of qubits assigned to the magic state factory
+//!
+//! *Author: Mathias Soeken*
 
 pub use code::RepetitionCode;
 pub use counter::LogicalCounts;
@@ -37,14 +50,8 @@ pub use estimates::AliceAndBobEstimates;
 pub use factories::ToffoliBuilder;
 pub use qubit::CatQubit;
 
-/// Repetition code for biased error correction with a focus on phase flips
 pub mod code;
-/// Computes logical space-time volume overhead for resource estimation from Q#
-/// files or formulas for ECC application
 pub mod counter;
-/// Convenience structure to display resource estimation results
 pub mod estimates;
-/// Toffoli magic state factories
 pub mod factories;
-/// Model for cat qubits
 pub mod qubit;

@@ -3,7 +3,8 @@
 // Licensed under the MIT License.
 
 #![warn(missing_docs)]
-//! Estimate the ressources required for an adder, the adder being specified by a Q# file.
+//! Estimate the resources required for an adder, the adder being specified by a
+//! Q# file.
 
 use std::rc::Rc;
 
@@ -12,10 +13,8 @@ use qsharp_alice_bob_resource_estimator::{
 };
 use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 
+/// Example of resource estimation from a Q# file.
 fn main() -> Result<(), anyhow::Error> {
-    // Resource estimation from Q#
-    // ---------------------------
-
     let filename = format!("{}/qsharp/Adder.qs", env!("CARGO_MANIFEST_DIR"));
 
     let qubit = CatQubit::new();

@@ -1,13 +1,12 @@
 // Copyright (c) Microsoft Corporation.
+// Copyright (c) Alice & Bob.
 // Licensed under the MIT License.
 
+//! Tools to manipulate counts of logical qubits and gates.
 //!
-//! This is done by calculating the following:
-//! <pre>
-//! - Qubits count
-//! - CX asymptotic count ⌈448 × bit_size³ / window_size⌉
-//! - CCX asymptotic count ⌈348 × bit_size³ / window_size⌉
-//! </pre>
+//! Can compute logical space and time overheads for resource estimation from Q#
+//! files. Can also directly instantiate a logical count from number of logical
+//! qubits, of CX and of CCX.
 
 use std::{fs::read_to_string, path::Path};
 
@@ -20,7 +19,7 @@ use qsc::{
 };
 use resource_estimator::estimates::{ErrorBudget, Overhead};
 
-/// Count the number of qubits, CX and CCX gates
+/// Count the number of logical qubits, CX and CCX gates.
 #[allow(clippy::struct_field_names)]
 #[derive(Clone, Default)]
 #[must_use]
@@ -33,7 +32,7 @@ pub struct LogicalCounts {
 }
 
 impl LogicalCounts {
-    /// Store logical qubits and gates counts
+    /// Create from logical qubits and gates counts.
     #[allow(clippy::similar_names)]
     pub fn new(qubit_count: u64, cx_count: u64, ccx_count: u64) -> Self {
         Self {
@@ -44,19 +43,7 @@ impl LogicalCounts {
         }
     }
 
-    /// Compute logical qubits and gates counts
-    #[allow(clippy::similar_names)]
-    pub fn from_elliptic_curve_crypto(bit_size: u64, window_size: u64) -> Self {
-        // Number of qubits for discrete log computation, arXiv:2302.06639 (p. 22, app C.11)
-        let qubit_count = 9 * bit_size + window_size + 4;
-        // Asymptotic gate counts, arXiv:2302.06639 (p. 21, app C.10)
-        let cx_count = (448 * bit_size.pow(3)).div_ceil(window_size);
-        let ccx_count = (348 * bit_size.pow(3)).div_ceil(window_size);
-
-        Self::new(qubit_count, cx_count, ccx_count)
-    }
-
-    /// Read Q# estimates
+    /// Count the logical resources from a Q# file.
     pub fn from_qsharp(filename: impl AsRef<Path>) -> Result<Self, String> {
         let content = read_to_string(filename).map_err(|_| String::from("Cannot read filename"))?;
 
@@ -84,7 +71,6 @@ impl LogicalCounts {
 }
 
 impl Overhead for LogicalCounts {
-    // Calculates the number of qubits and circuit depth (in # of cycles) of the algorithm
     fn logical_qubits(&self) -> u64 {
         let horizontal_routing_qubits = self.qubit_count.div_ceil(2) + 1;
 
@@ -93,11 +79,11 @@ impl Overhead for LogicalCounts {
 
     #[allow(clippy::similar_names)]
     fn logical_depth(&self, _: &ErrorBudget) -> u64 {
-        let cx_f = self.cx_count.to_f64().expect("#CX is convertible to f64");
-        let ccx_f = self.ccx_count.to_f64().expect("#CCX is convertible to f64");
+        let cx_f = self.cx_count.to_f64().expect("#CX didn't convert to f64");
+        let ccx_f = self.ccx_count.to_f64().expect("#CCX didn't convert to f64");
 
         // arXiv:2302.06639 (p. 30, Fig. 27); measurement is counted as 0.2
-        // cycles according to open source code
+        // cycles according to open source code (5 steps in a cycle)
         let cx_cycles = 2.2;
 
         // arXiv:2302.06639 (p. 36, Fig. 33); the cost is approximated as 3
@@ -108,7 +94,7 @@ impl Overhead for LogicalCounts {
         ((cx_f * cx_cycles) + (ccx_f * ccx_cycles))
             .ceil()
             .to_u64()
-            .expect("logical depth is not too large")
+            .expect("logical depth is too large")
     }
 
     fn num_magic_states(&self, _: &ErrorBudget, _: usize) -> u64 {
@@ -167,7 +153,7 @@ impl Backend for LogicalCounts {
         } else {
             let qubit = self.qubit_count;
             self.qubit_count += 1;
-            qubit.to_usize().expect("qubit is not too large")
+            qubit.to_usize().expect("qubit is too large")
         }
     }
 

@@ -1,14 +1,21 @@
 // Copyright (c) Microsoft Corporation.
+// Copyright (c) Alice & Bob.
 // Licensed under the MIT License.
 
+//! Repetition code for biased error correction with a focus on phase flips.
 //!
-//! Calculates and stores physical specs of the 1D repetition code:
-//! <pre>
-//! - Logical phase-flip error probability per error correction cycle
-//! - Logical bit-flip error probability per error correction cycle
-//! - Fault tolerance threshold (κ₁/κ₂)_th (0.013 hardcoded)
-//! - Construct an iterator to explore a range for the parameters (distance, |α|²)
-//! </pre>
+//! The code and its performances are described in
+//! [arXiv:2302.06639](https://arxiv.org/abs/2302.06639).
+//!
+//! Code parameters:
+//! - code distance
+//! - average number of photons |α|²
+//!
+//! Hard-coded values:
+//! - 1/κ₂ = 100 ns (sets the gates speed)
+//! - (κ₁/κ₂)_th = 0.013 (obtained by circuit-level simulation)
+//! - max distance (for iteration) = 49
+//! - max |α|² (for iteration) = 30.0
 
 use num_traits::{FromPrimitive, ToPrimitive};
 use std::{cmp::Ordering, fmt::Display};
@@ -17,20 +24,21 @@ use resource_estimator::estimates::ErrorCorrection;
 
 use crate::qubit::CatQubit;
 
-/// Store and compute physical properties of a 1D repetition code
+/// Represents a repetition code.
 pub struct RepetitionCode {
     p_threshold: f64,
 }
 
 impl RepetitionCode {
     #[must_use]
-    /// Default initialization with threshold=0.013
+    /// Default initialization, with threshold at 0.013.
     pub fn new() -> Self {
         Self::default()
     }
 
-    // arXiv:2302.06639 (p. 28, eq. E1)
     #[must_use]
+    /// Logical phaseflip probability per round, as given by
+    /// [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) (p. 28, eq. E1).
     fn logical_phaseflip_probability(
         &self,
         physical_qubit: &CatQubit,
@@ -51,6 +59,8 @@ impl RepetitionCode {
 
     #[allow(clippy::similar_names)]
     #[must_use]
+    /// Logical bitflip probability per round, as given in
+    /// [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) (eq. 3).
     fn logical_bitflip_probability(parameter: &CodeParameter) -> Option<f64> {
         // number of CX gates in a repetition code cycle
         let ncx = 2 * (parameter.distance - 1);
@@ -64,27 +74,28 @@ impl RepetitionCode {
 }
 
 impl Default for RepetitionCode {
+    /// Create repetition code, with its threshold (κ₁/κ₂)_th.
+    ///
+    /// Value taken from [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)
+    /// (p. 4, Eq. (3), p. 28, Fig. 26). Note that this is not a variable you
+    /// can tune, but the result of a circuit-level simulation.
     fn default() -> Self {
-        // Threshold (κ₁/κ₂)_th for the repetition code correction
-        // arXiv:2302.06639 (p. 4, p. 28, Fig. 26)
         let p_threshold = 0.013;
-
         Self { p_threshold }
     }
 }
 
-/// Store the code distance and average photon number |α|²
 #[derive(Clone)]
+/// Store the code distance and average photon number |α|².
 pub struct CodeParameter {
     distance: u64,
-    // Amplitude ɑ arXiv:2302.06639 (p. 3),
-    // average number of photons |ɑ|²
+    // Amplitude ɑ arXiv:2302.06639 (p. 3), average number of photons |ɑ|²
     alpha_sq: f64,
 }
 
 impl CodeParameter {
-    /// Set new values for the code parameters (distance, |α|²)
     #[must_use]
+    /// Set new values for the code parameters (distance, |α|²).
     pub fn new(distance: u64, alpha_sq: f64) -> Self {
         Self { distance, alpha_sq }
     }
@@ -96,6 +107,7 @@ impl Display for CodeParameter {
     }
 }
 
+/// Keeps the range of parameters on which to iterate.
 struct CodeParameterRange {
     distance: u64,
     alpha_sq: u64,
@@ -112,11 +124,11 @@ impl CodeParameterRange {
             alpha_sq: lower_bound
                 .alpha_sq
                 .to_u64()
-                .expect("alpha can be represented as u64"),
+                .expect("alpha_sq failed to be represented as u64"),
             max_distance,
             max_alpha_sq: max_alpha_sq
                 .to_u64()
-                .expect("max_alpha can be represented as u64"),
+                .expect("max_alpha_sq failed be represented as u64"),
         }
     }
 }
@@ -130,7 +142,7 @@ impl Iterator for CodeParameterRange {
         } else {
             let result = CodeParameter::new(
                 self.distance,
-                self.alpha_sq.to_f64().expect("alpha fits in f64"),
+                self.alpha_sq.to_f64().expect("alpha_sq doesn't fit in f64"),
             );
 
             if self.alpha_sq == self.max_alpha_sq {
@@ -146,9 +158,6 @@ impl Iterator for CodeParameterRange {
 }
 
 impl ErrorCorrection for RepetitionCode {
-    // Compute the number of physical qubits, cycle time, error rate
-    // and (distance, |α|²) for the repetition code,
-    // and check that the number of physical qubits is initialized
     type Qubit = CatQubit;
     type Parameter = CodeParameter;
 
@@ -159,13 +168,11 @@ impl ErrorCorrection for RepetitionCode {
         CodeParameterRange::new(lower_bound, 49, 30.0)
     }
 
-    /// Number of physical qubits per instance of the repetition code (2 x distance - 1)
     fn physical_qubits(&self, parameter: &Self::Parameter) -> Result<u64, String> {
         // arXiv:2302.06639 (p. 27)
         Ok(2 * parameter.distance - 1)
     }
 
-    /// Number of logical qubits per instance of the repetition code (1)
     fn logical_qubits(&self, _parameter: &Self::Parameter) -> Result<u64, String> {
         Ok(1)
     }
@@ -176,7 +183,8 @@ impl ErrorCorrection for RepetitionCode {
         parameter: &Self::Parameter,
     ) -> Result<u64, String> {
         // arXiv:2302.06639 (p. 28, repetition code cycle time in d code cycles)
-        Ok(500 * parameter.distance)
+        // Time for one round : 5/κ₂
+        Ok(500 * parameter.distance) // ns, corresponds to 1/κ₂ = 100 ns
     }
 
     fn logical_error_rate(
