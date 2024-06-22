@@ -281,7 +281,7 @@ impl FactoryBuilder<RepetitionCode> for ToffoliBuilder {
         _magic_state_type: usize,
         output_error_rate: f64,
         _max_code_parameter: &CodeParameter,
-    ) -> Vec<Cow<Self::Factory>> {
+    ) -> Option<Vec<Cow<Self::Factory>>> {
         assert!(
             output_error_rate > self.lowest_error_probability,
             "Requested error probability is too low"
@@ -295,7 +295,7 @@ impl FactoryBuilder<RepetitionCode> for ToffoliBuilder {
             })
             .collect();
         factories.sort_unstable();
-        factories
+        Some(factories)
     }
 
     /// Number of types of magic states.

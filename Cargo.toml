@@ -9,8 +9,8 @@ clap = { version = "4.5.4", features = ["derive"] }
 num-bigint = "0.4"
 num-complex = "0.4"
 num-traits = "0.2"
-qsc = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.4.0" }
-resource_estimator = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.4.0" }
+qsc = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.6.0" }
+resource_estimator = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.6.0" }
 
 [lints.clippy]
 mod_module_files = "warn"
