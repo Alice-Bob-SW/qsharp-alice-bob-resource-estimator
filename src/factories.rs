@@ -76,11 +76,17 @@ impl estimates::Factory for ToffoliFactory {
 
     /// Number of physical qubits in each factory.
     ///
-    /// Each Toffoli factory requires 4 logical qubits, see
-    /// [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) (p. 27).
+    /// Each Toffoli factory requires 4 logical qubits + 1 "horizontal" routing qubit,
+    /// see [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) (p. 27).
+    /// The routing qubit under the factories is associated with the compute qubits.
+    ///
+    /// Note that the formula might not be exact when factories internal distance is
+    /// different than the main code distance, but it is negligeable.
+    /// Additionnaly, note that that is might not even be a real problem as only one of the 4
+    /// factory qubit needs to be accessed through all it's physical qubits.
     fn physical_qubits(&self) -> u64 {
         let num_logical_qubits: u64 = 4;
-        let horizontal_routing_qubits = num_logical_qubits.div_ceil(4) + 1;
+        let horizontal_routing_qubits: u64 = 1;
 
         (num_logical_qubits + horizontal_routing_qubits) * (2 * self.code_distance as u64 - 1)
     }

@@ -25,12 +25,13 @@ impl AliceAndBobEstimates {
     #[must_use]
     /// Count the number of physical qubits, routing qubits included.
     pub fn physical_qubits(&self) -> u64 {
-        // Routing qubits must be added to ensure all-to-all connectivity
+        // "Vertical" routing qubits must be added to ensure all-to-all connectivity
         // Formula from arXiv: 2302.06639, p. 27. `logical_qubits()` include the "horizontal
-        // routing qubits".
+        // routing qubits", including the one between the computation qubits and factories.
         let additional_routing_qubits = 2
-            * ((3 * self.layout_overhead().logical_qubits()
-                + self.toffoli_factory_part().map_or(0, FactoryPart::copies) * 6)
+            * ((3
+                * (self.layout_overhead().logical_qubits()
+                    + self.toffoli_factory_part().map_or(0, FactoryPart::copies) * 5))
                 - 1);
         self.0.physical_qubits() + additional_routing_qubits
     }
@@ -111,7 +112,9 @@ impl Display for AliceAndBobEstimates {
         writeln!(
             f,
             "factories distance:  {}",
-            self.toffoli_factory_part().expect("No factory part").factory()
+            self.toffoli_factory_part()
+                .expect("No factory part")
+                .factory()
         )?;
         writeln!(f, "factory fraction:    {:.2}%", self.factory_fraction())?;
         writeln!(f, "─────────────────────────────")
