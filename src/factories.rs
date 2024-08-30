@@ -164,7 +164,7 @@ impl Default for ToffoliBuilder {
             },
             ToffoliFactory {
                 code_distance: 3,
-                alpha_sq: 3.93,
+                alpha_sq: 5.08,
                 error_probability: 1.02e-4,
                 steps: 29,
                 acceptance_probability: 0.745,
