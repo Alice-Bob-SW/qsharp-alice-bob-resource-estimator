@@ -108,6 +108,11 @@ impl Display for AliceAndBobEstimates {
             "#factories:          {}",
             self.toffoli_factory_part().map_or(0, FactoryPart::copies)
         )?;
+        writeln!(
+            f,
+            "factories distance:  {}",
+            self.toffoli_factory_part().expect("No factory part").factory()
+        )?;
         writeln!(f, "factory fraction:    {:.2}%", self.factory_fraction())?;
         writeln!(f, "─────────────────────────────")
     }

@@ -16,7 +16,7 @@
 
 use num_traits::FromPrimitive;
 use resource_estimator::estimates::{self, FactoryBuilder};
-use std::{borrow::Cow, rc::Rc};
+use std::{borrow::Cow, fmt::Display, rc::Rc};
 
 use crate::{code::CodeParameter, CatQubit, RepetitionCode};
 
@@ -134,6 +134,12 @@ impl Ord for ToffoliFactory {
 impl PartialOrd for ToffoliFactory {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl Display for ToffoliFactory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (|ɑ|² = {})", self.code_distance, self.alpha_sq)
     }
 }
 

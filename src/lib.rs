@@ -21,6 +21,11 @@
 //! - 1/κ₂ = 100 ns
 //! - κ₁/κ₂ = 1e-5
 //! - no saturation of bit-flip
+//! - simplified gate counting, when translating from Q# (no consequences for
+//!   modular arithmetic circuits, approximation in general):
+//!   * 1-qubit Clifford gates are free
+//!   * CX, CY, CZ are count as CX
+//!   * no parallelism considered
 //!
 //! ### Takes:
 //! - specification of the algorithmic required resources, either entered

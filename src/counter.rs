@@ -71,6 +71,12 @@ impl LogicalCounts {
 }
 
 impl Overhead for LogicalCounts {
+    /// The number of logical qubits to execute the algorithm after mapping.
+    ///
+    /// This number includes "horizontal" routing qubits for the logical qubits, including the top
+    /// one (in between the compute and factory parts). It does not include the "vertical" routing
+    /// qubits (they are included only for displaying the estimates results). It does not include
+    /// qubit used to produce magic states.
     fn logical_qubits(&self) -> u64 {
         let horizontal_routing_qubits = self.qubit_count.div_ceil(2) + 1;
 
