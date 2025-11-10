@@ -3,7 +3,21 @@ name = "qsharp-alice-bob-resource-estimator"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+# Build both the normal Rust lib and the Python extension (.so/.pyd)
+name = "qsharp_alice_bob_resource_estimator"
+crate-type = ["rlib", "cdylib"]
+
+[features]
+# Turn on the PyO3 entrypoint only when we build for Python
+python = ["pyo3/extension-module"]
+default = ["python"]
+
+
 [dependencies]
+# make PyO3 optional so plain Rust builds don't require Python
+pyo3 = { version = "0.25", optional = true }
+
 anyhow = "1.0.81"
 clap = { version = "4.5.4", features = ["derive"] }
 num-bigint = "0.4"
@@ -11,6 +25,7 @@ num-complex = "0.4"
 num-traits = "0.2"
 qsc = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.6.0" }
 resource_estimator = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.6.0" }
+once_cell = "1.21.3"
 
 [lints.clippy]
 mod_module_files = "warn"
@@ -19,4 +34,7 @@ unwrap_used = "warn"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
+
+
+
 

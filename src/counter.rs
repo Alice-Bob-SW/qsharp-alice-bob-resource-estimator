@@ -84,6 +84,7 @@ impl Overhead for LogicalCounts {
     }
 
     #[allow(clippy::similar_names)]
+    // Numbers are specified in logical cycles and not physical -> 0.2 is false and needs to be changed. To be double-checked.
     fn logical_depth(&self, _: &ErrorBudget) -> u64 {
         let cx_f = self.cx_count.to_f64().expect("#CX didn't convert to f64");
         let ccx_f = self.ccx_count.to_f64().expect("#CCX didn't convert to f64");

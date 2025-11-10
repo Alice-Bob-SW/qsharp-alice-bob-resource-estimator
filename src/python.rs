@@ -1,0 +1,297 @@
+use pyo3::prelude::*; // brings Python, PyResult, PyModule, Bound, etc.
+use std::rc::Rc;
+
+use crate::{AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder};
+use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
+
+/// Builds an [`ErrorBudget`] from either a total error target or a per-component budget.
+///
+/// # Arguments
+/// - `error_total` — If `Some(p)`, split the total error `p` into equal
+///   target/meas components `(0.5p, 0.5p)` with routing set to `0.0`.
+/// - `error_budget` — If `Some((t, m, r))`, use these explicit per-component values.
+///
+/// # Returns
+/// A fully specified [`ErrorBudget`].
+///
+/// # Notes
+/// - If both `error_total` and `error_budget` are `None`, a default split of
+///   `(0.333*0.5, 0.333*0.5, 0.0)` is used (conservative placeholder).
+/// - Supplying both `Some` variants is not supported and is treated as unreachable.
+fn make_budget(error_total: Option<f64>, error_budget: Option<(f64, f64, f64)>) -> ErrorBudget {
+    match (error_total, error_budget) {
+        (Some(p), None) => ErrorBudget::new(p * 0.5, p * 0.5, 0.0),
+        (None, Some((t, m, r))) => ErrorBudget::new(t, m, r),
+        (None, None) => ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0),
+        _ => unreachable!(),
+    }
+}
+
+/// Python-visible snapshot of logical counts extracted from a Q# program.
+///
+/// Exposes a minimal, read-only view sufficient for downstream analysis in Python.
+/// Fields correspond to logical resources observed by the interpreter.
+#[pyclass]
+pub struct LogicalCountsPy {
+    /// Number of (algorithm) logical qubits allocated by the interpreter.
+    #[pyo3(get)]
+    qubit_count: u64,
+    /// Number of logical CX-equivalent two-qubit gates (including CY/CZ and SWAP→3×CX).
+    #[pyo3(get)]
+    cx_count: u64,
+    /// Number of logical CCX (Toffoli) gates.
+    #[pyo3(get)]
+    ccx_count: u64,
+}
+
+/// Converts an internal [`LogicalCounts`] reference into a Python-visible [`LogicalCountsPy`].
+///
+/// Copies only primitive fields; no heap sharing is required.
+impl From<&LogicalCounts> for LogicalCountsPy {
+    fn from(c: &LogicalCounts) -> Self {
+        Self {
+            qubit_count: c.qubit_count,
+            cx_count: c.cx_count,
+            ccx_count: c.ccx_count,
+        }
+    }
+}
+
+/// Estimate resources from a Q# file and return both the best estimate and, optionally,
+/// a frontier of Pareto-optimal trade-offs, together with the parsed logical counts.
+///
+/// # Arguments
+/// - `filename` — Path to a Q# source file to be parsed and interpreted for counts.
+/// - `frontier` — If `true`, also compute a frontier of estimates (e.g., different distances/α).
+/// - `error_total` — Overall error target `p_total`; mutually exclusive with `error_budget`.
+/// - `error_budget` — Tuple `(target, meas, routing)` if an explicit split is desired.
+///
+/// # Returns
+/// A 3-tuple:
+/// 1. `EstimatesPy` — the single best estimate,
+/// 2. `Vec<EstimatesPy>` — optionally, the frontier (empty if `frontier == false`),
+/// 3. `LogicalCountsPy` — Python snapshot of the logical counts extracted from `filename`.
+///
+/// # Errors
+/// - I/O or parsing failures when loading the Q# file,
+/// - Failures during resource estimation.
+///
+/// # Notes
+/// Counts are placed behind `Rc` to share between the estimator and the Python view
+/// without copying the full structure.
+#[pyfunction]
+fn estimate_file_struct(
+    filename: &str,
+    frontier: bool,
+    error_total: Option<f64>,
+    error_budget: Option<(f64, f64, f64)>,
+) -> PyResult<(EstimatesPy, Vec<EstimatesPy>, LogicalCountsPy)> {
+    // Build the estimation
+    let qubit = CatQubit::new();
+    let qec = RepetitionCode::new();
+    let builder = ToffoliBuilder::default();
+    let budget = make_budget(error_total, error_budget);
+
+    // Put counts behind an Rc so we can both pass it into PRE and also derive a Python view
+    let counts = std::rc::Rc::new(
+        LogicalCounts::from_qsharp(filename)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?
+    );
+    let counts_py = LogicalCountsPy::from(counts.as_ref());
+
+    let estimation = PhysicalResourceEstimation::new(
+        qec,
+        std::rc::Rc::new(qubit),
+        builder,
+        counts.clone(), // share with PRE
+        budget,
+    );
+
+    // Single best estimate
+    let single_est: AliceAndBobEstimates = estimation
+        .estimate()
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?
+        .into();
+    let single_py = EstimatesPy::from(&single_est);
+
+    // Optional frontier
+    let mut frontier_py = Vec::new();
+    if frontier {
+        let results = estimation
+            .build_frontier()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        frontier_py = results
+            .into_iter()
+            .map(|r| {
+                let est: AliceAndBobEstimates = r.into();
+                EstimatesPy::from(&est)
+            })
+            .collect();
+    }
+
+    Ok((single_py, frontier_py, counts_py))
+}
+
+/// Structured variant of the ECC example that returns typed estimate objects.
+///
+/// # Arguments
+/// - `bit_size` — ECC modulus bit size.
+/// - `window_size` — Window size used by the example algorithm.
+/// - `frontier` — If `true`, also return a list representing the frontier.
+///
+/// # Returns
+/// A tuple:
+/// 1. `EstimatesPy` — single best estimate,
+/// 2. `Vec<EstimatesPy>` — optional frontier (empty if `frontier == false`).
+///
+/// # Errors
+/// Propagates example execution or estimation errors as Python `RuntimeError`s.
+#[pyfunction]
+fn elliptic_curve_estimate_struct(
+    bit_size: u64,
+    window_size: u64,
+    frontier: bool,
+) -> PyResult<(EstimatesPy, Vec<EstimatesPy>)> {
+    let (single, list) = crate::examples::run_ecc_example_struct(bit_size, window_size, frontier)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+
+    Ok((
+        EstimatesPy::from(&single),
+        list.iter().map(EstimatesPy::from).collect(),
+    ))
+}
+
+/// Python class that encapsulates a single resource-estimation result.
+///
+/// Exposed fields:
+/// - `physical_qubits`
+/// - `runtime_seconds`
+/// - `runtime_hours`
+/// - `total_error`
+/// - `code_distance`
+/// - `code_alpha2`
+/// - `factories`
+/// - `factories_distance`
+/// - `factories_alpha2`
+/// - `factory_fraction_percent`
+/// - `factory_fraction`
+///
+/// # Notes
+/// This object is a light, read-only view tailored for Python consumers. Numeric
+/// values are already converted to convenient units where applicable.
+#[pyclass]
+#[derive(Clone)]
+pub struct EstimatesPy {
+    #[pyo3(get)] pub physical_qubits: u64,
+    #[pyo3(get)] pub runtime_seconds: f64,
+    #[pyo3(get)] pub runtime_hours: f64,
+    #[pyo3(get)] pub total_error: f64,
+
+    // logical patch
+    #[pyo3(get)] pub code_distance: u64,
+    #[pyo3(get)] pub code_alpha2: f64,
+
+    // factories
+    #[pyo3(get)] pub factories: u64,
+    #[pyo3(get)] pub factories_distance: u64,
+    #[pyo3(get)] pub factories_alpha2: f64,
+
+    // fractions
+    #[pyo3(get)] pub factory_fraction_percent: f64,
+    #[pyo3(get)] pub factory_fraction: f64,
+}
+
+/// Converts a core `AliceAndBobEstimates` value into a Python-friendly [`EstimatesPy`].
+impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
+    fn from(e: &crate::AliceAndBobEstimates) -> Self {
+        Self {
+            physical_qubits: e.physical_qubits(),
+            runtime_seconds: e.runtime_seconds(),
+            runtime_hours: e.runtime_hours(),
+            total_error: e.total_error(),
+            code_distance: e.code_distance(),         // or numeric version you already have
+            code_alpha2: e.code_alpha2(),
+            factories: e.factories(),
+            factories_distance: e.factories_distance(),
+            factories_alpha2: e.factories_alpha2(),
+            factory_fraction_percent: e.factory_fraction(),
+            factory_fraction: e.factory_fraction_ratio(),
+        }
+    }
+}
+
+/// Estimate resources from explicit logical counts and return typed results,
+/// optionally including a frontier of trade-offs.
+///
+/// # Arguments
+/// - `qubits` — Logical (algorithm) qubit count.
+/// - `cx` — Logical CX-equivalent two-qubit gate count.
+/// - `ccx` — Logical CCX (Toffoli) gate count.
+/// - `frontier` — If `true`, compute and return the frontier as structured objects.
+/// - `error_total` — Overall error target; mutually exclusive with `error_budget`.
+/// - `error_budget` — Tuple `(target, meas, routing)` for an explicit split.
+///
+/// # Returns
+/// A tuple:
+/// 1. `EstimatesPy` — single best estimate,
+/// 2. `Vec<EstimatesPy>` — frontier (empty if `frontier == false`).
+///
+/// # Errors
+/// Propagates errors from the physical resource estimator.
+#[pyfunction]
+fn estimate_resources_struct(
+    qubits: u64, cx: u64, ccx: u64,
+    frontier: bool,
+    error_total: Option<f64>,
+    error_budget: Option<(f64, f64, f64)>,
+) -> PyResult<(EstimatesPy, Vec<EstimatesPy>)> {
+    // Build the estimation
+    let qubit = CatQubit::new();
+    let qec = RepetitionCode::new();
+    let builder = ToffoliBuilder::default();
+    let budget = make_budget(error_total, error_budget);
+
+    let counts = LogicalCounts::new(qubits, cx, ccx);
+    let estimation = PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, Rc::new(counts), budget);
+
+    // Single best estimate
+    let single_est: AliceAndBobEstimates = estimation
+        .estimate()
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?
+        .into();
+    let single_py = EstimatesPy::from(&single_est);
+
+    // Optional frontier
+    let mut frontier_py = Vec::new();
+    if frontier {
+        let results = estimation
+            .build_frontier()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        for r in results {
+            let est: AliceAndBobEstimates = r.into();
+            frontier_py.push(EstimatesPy::from(&est));
+        }
+    }
+
+    Ok((single_py, frontier_py))
+}
+
+/// Python module entry point for the Alice & Bob Q# resource estimator bindings.
+///
+/// Registers user-facing functions that load Q# programs, accept explicit logical counts,
+/// and run the built-in ECC example in both pretty-printed and structured forms.
+///
+/// # Exposed callables
+/// - `estimate_file_struct(...)`
+/// - `estimate_resources_struct(...)`
+/// - `elliptic_curve_estimate_struct(...)`
+///
+/// # Errors
+/// Any initialization failure is surfaced as a Python `RuntimeError`.
+#[pymodule]
+fn qsharp_alice_bob_resource_estimator(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(estimate_file_struct, m)?)?;
+    m.add_function(wrap_pyfunction!(estimate_resources_struct, m)?)?;
+    m.add_function(wrap_pyfunction!(elliptic_curve_estimate_struct, m)?)?;
+    Ok(())
+}
