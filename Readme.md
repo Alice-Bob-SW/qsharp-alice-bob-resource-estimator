@@ -10,15 +10,18 @@ Results from the resource estimator can be compared with the one of [the code co
 
 Big thanks to Mathias Soeken for having written the initial version of this repository, and rebuilt [Microsoft Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator) to allow our architecture to be handled.
 
-Installation
-------------
-This is a standard Cargo crate.
-Once rust is installed, `cargo build --release` will do its magic and build the estimator. The executable files are also available from the CI artifacts.
+## Q# Resource Estimator Python Interface
+The resource estimator can now be imported into Python as a module using the functionality provided by [PyO3](https://pyo3.rs/v0.27.1/getting-started.html). To set it up, first install maturin in your virtual environment:
 
-Usage
------
-This crate is designed as a library, and also contains a standalone executable that estimates resources from either a Q# file or from numbers of logical qubits, CX and CCX.
-Use the subcommand `help` to have the documentation of the executable.
+`pip install maturin`
 
-Examples can be run with `cargo run --example=elliptic_log` and `cargo run --example=from_qsharp`.
+Then build and install the module locally by running:
 
+`run maturin develop`
+
+After this, you should be good to go and you can import the resource estimator directly from Python.
+
+## Functionality
+The python interface offers two main functionalities:
+- The first option is to input a tuple ```(#Qubits, #CX, #CCX)``` for which you want to estimate the physical resources. These values can be obtained for example from Qualtran so this provides a seemless interface between the two tools.
+- The second option is to provide a Q# file which specificies a concrete algorithm for which you want to estimate the physical resources. The tool will then calculate ```(#Qubits, #CX, #CCX)``` from this Q# sharp file and perform the resource estimation from there.

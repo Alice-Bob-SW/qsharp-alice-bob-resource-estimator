@@ -92,23 +92,29 @@ impl AliceAndBobEstimates {
     /// Code distance of the logical patch.
     #[must_use]
     pub fn code_distance(&self) -> u64 {
-    let s = self.logical_patch().code_parameter().to_string();
-    s.split_whitespace()
-        .next()
-        .and_then(|t| t.parse::<u64>().ok())
-        .expect("couldn't parse code distance")
-}
+        let s = self.logical_patch().code_parameter().to_string();
+        s.split_whitespace()
+            .next()
+            .and_then(|t| t.parse::<u64>().ok())
+            .expect("couldn't parse code distance")
+    }
 
     /// Number of Toffoli factory copies.
     #[must_use]
     pub fn factories(&self) -> u64 {
-        self.toffoli_factory_part().map_or(0, resource_estimator::estimates::FactoryPart::copies)
+        self.toffoli_factory_part()
+            .map_or(0, resource_estimator::estimates::FactoryPart::copies)
     }
 
     /// Human-readable factory description (e.g. "9 (|ɑ|² = 12.83)").
     #[must_use]
     pub fn factories_description(&self) -> String {
-        format!("{}", self.toffoli_factory_part().expect("No factory part").factory())
+        format!(
+            "{}",
+            self.toffoli_factory_part()
+                .expect("No factory part")
+                .factory()
+        )
     }
 
     /// Fraction of qubits used by factories as a ratio in [0,1].
@@ -124,16 +130,25 @@ impl AliceAndBobEstimates {
             .to_u64()
             .expect("can't convert physical_qubits_for_factories to u64")
     }
-    
+
     /// Factory code distance.
     #[must_use]
     pub fn factories_distance(&self) -> u64 {
-        let s = self.toffoli_factory_part().expect("No factory part").factory().to_string();
-        s.split('(').next().unwrap_or_default()
-            .split_whitespace().next().unwrap_or("0")
-            .parse().expect("failed to parse factories distance")
+        let s = self
+            .toffoli_factory_part()
+            .expect("No factory part")
+            .factory()
+            .to_string();
+        s.split('(')
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .next()
+            .unwrap_or("0")
+            .parse()
+            .expect("failed to parse factories distance")
     }
-    
+
     /// Average number of photons |α|² in each cat qubit.
     #[must_use]
     pub fn code_alpha2(&self) -> f64 {
@@ -144,11 +159,13 @@ impl AliceAndBobEstimates {
     /// Average number of photons |α|² in each cat qubit used in factories.
     #[must_use]
     pub fn factories_alpha2(&self) -> f64 {
-        let s = self.toffoli_factory_part().expect("No factory part").factory().to_string();
+        let s = self
+            .toffoli_factory_part()
+            .expect("No factory part")
+            .factory()
+            .to_string();
         extract_alpha2(&s).expect("failed to parse factories alpha2")
     }
-
-
 }
 
 impl Deref for AliceAndBobEstimates {

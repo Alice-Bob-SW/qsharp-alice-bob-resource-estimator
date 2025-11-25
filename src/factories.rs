@@ -121,7 +121,7 @@ impl estimates::Factory for ToffoliFactory {
         1
     }
 
-    fn max_code_parameter(&self) -> Option<Cow<Self::Parameter>> {
+    fn max_code_parameter(&self) -> Option<Cow<'_, Self::Parameter>> {
         Some(Cow::Owned(CodeParameter::new(
             self.code_distance as u64,
             self.alpha_sq.sqrt(),
@@ -293,7 +293,7 @@ impl FactoryBuilder<RepetitionCode> for ToffoliBuilder {
         _magic_state_type: usize,
         output_error_rate: f64,
         _max_code_parameter: &CodeParameter,
-    ) -> Option<Vec<Cow<Self::Factory>>> {
+    ) -> Option<Vec<Cow<'_, Self::Factory>>> {
         assert!(
             output_error_rate > self.lowest_error_probability,
             "Requested error probability is too low"

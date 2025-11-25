@@ -11,10 +11,10 @@
 
 // src/examples.rs
 
-use std::rc::Rc;
-use anyhow::Result;
 use crate::{AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder};
+use anyhow::Result;
 use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
+use std::rc::Rc;
 
 #[allow(clippy::similar_names)]
 fn elliptic_curve_crypto_count(bit_size: u64, window_size: u64) -> LogicalCounts {
@@ -38,7 +38,9 @@ pub fn run_ecc_example(bit_size: u64, window_size: u64) -> Result<Vec<String>> {
     let mut out = Vec::new();
 
     let result: AliceAndBobEstimates = estimation.estimate()?.into();
-    out.push("Estimates from pre-computed logical count (elliptic curve discrete logarithm):".into());
+    out.push(
+        "Estimates from pre-computed logical count (elliptic curve discrete logarithm):".into(),
+    );
     out.push(format!("{result}"));
 
     out.push("----------------------------------------".into());

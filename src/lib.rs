@@ -58,14 +58,9 @@ pub use qubit::CatQubit;
 pub mod code;
 pub mod counter;
 pub mod estimates;
+pub mod examples;
 pub mod factories;
 pub mod qubit;
-pub mod examples;
-pub mod cables;
-pub mod hardware;
-pub mod materials;
-pub mod gates;
-pub mod logical_utils;
 // Only compile the Python module when the "python" feature is enabled.
 #[cfg(feature = "python")]
 mod python;

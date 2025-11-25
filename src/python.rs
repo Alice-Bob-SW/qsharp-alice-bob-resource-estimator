@@ -1,5 +1,8 @@
 use pyo3::prelude::*; // brings Python, PyResult, PyModule, Bound, etc.
+use std::fmt;
 use std::rc::Rc;
+
+use num_format::{Locale, ToFormattedString};
 
 use crate::{AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder};
 use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
@@ -31,7 +34,7 @@ fn make_budget(error_total: Option<f64>, error_budget: Option<(f64, f64, f64)>) 
 ///
 /// Exposes a minimal, read-only view sufficient for downstream analysis in Python.
 /// Fields correspond to logical resources observed by the interpreter.
-#[pyclass]
+#[pyclass(frozen)]
 pub struct LogicalCountsPy {
     /// Number of (algorithm) logical qubits allocated by the interpreter.
     #[pyo3(get)]
@@ -76,9 +79,6 @@ impl From<&LogicalCounts> for LogicalCountsPy {
 /// - I/O or parsing failures when loading the Q# file,
 /// - Failures during resource estimation.
 ///
-/// # Notes
-/// Counts are placed behind `Rc` to share between the estimator and the Python view
-/// without copying the full structure.
 #[pyfunction]
 fn estimate_file_struct(
     filename: &str,
@@ -95,7 +95,7 @@ fn estimate_file_struct(
     // Put counts behind an Rc so we can both pass it into PRE and also derive a Python view
     let counts = std::rc::Rc::new(
         LogicalCounts::from_qsharp(filename)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.clone()))?,
     );
     let counts_py = LogicalCountsPy::from(counts.as_ref());
 
@@ -161,65 +161,6 @@ fn elliptic_curve_estimate_struct(
     ))
 }
 
-/// Python class that encapsulates a single resource-estimation result.
-///
-/// Exposed fields:
-/// - `physical_qubits`
-/// - `runtime_seconds`
-/// - `runtime_hours`
-/// - `total_error`
-/// - `code_distance`
-/// - `code_alpha2`
-/// - `factories`
-/// - `factories_distance`
-/// - `factories_alpha2`
-/// - `factory_fraction_percent`
-/// - `factory_fraction`
-///
-/// # Notes
-/// This object is a light, read-only view tailored for Python consumers. Numeric
-/// values are already converted to convenient units where applicable.
-#[pyclass]
-#[derive(Clone)]
-pub struct EstimatesPy {
-    #[pyo3(get)] pub physical_qubits: u64,
-    #[pyo3(get)] pub runtime_seconds: f64,
-    #[pyo3(get)] pub runtime_hours: f64,
-    #[pyo3(get)] pub total_error: f64,
-
-    // logical patch
-    #[pyo3(get)] pub code_distance: u64,
-    #[pyo3(get)] pub code_alpha2: f64,
-
-    // factories
-    #[pyo3(get)] pub factories: u64,
-    #[pyo3(get)] pub factories_distance: u64,
-    #[pyo3(get)] pub factories_alpha2: f64,
-
-    // fractions
-    #[pyo3(get)] pub factory_fraction_percent: f64,
-    #[pyo3(get)] pub factory_fraction: f64,
-}
-
-/// Converts a core `AliceAndBobEstimates` value into a Python-friendly [`EstimatesPy`].
-impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
-    fn from(e: &crate::AliceAndBobEstimates) -> Self {
-        Self {
-            physical_qubits: e.physical_qubits(),
-            runtime_seconds: e.runtime_seconds(),
-            runtime_hours: e.runtime_hours(),
-            total_error: e.total_error(),
-            code_distance: e.code_distance(),         // or numeric version you already have
-            code_alpha2: e.code_alpha2(),
-            factories: e.factories(),
-            factories_distance: e.factories_distance(),
-            factories_alpha2: e.factories_alpha2(),
-            factory_fraction_percent: e.factory_fraction(),
-            factory_fraction: e.factory_fraction_ratio(),
-        }
-    }
-}
-
 /// Estimate resources from explicit logical counts and return typed results,
 /// optionally including a frontier of trade-offs.
 ///
@@ -240,7 +181,9 @@ impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
 /// Propagates errors from the physical resource estimator.
 #[pyfunction]
 fn estimate_resources_struct(
-    qubits: u64, cx: u64, ccx: u64,
+    qubits: u64,
+    cx: u64,
+    ccx: u64,
     frontier: bool,
     error_total: Option<f64>,
     error_budget: Option<(f64, f64, f64)>,
@@ -252,7 +195,8 @@ fn estimate_resources_struct(
     let budget = make_budget(error_total, error_budget);
 
     let counts = LogicalCounts::new(qubits, cx, ccx);
-    let estimation = PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, Rc::new(counts), budget);
+    let estimation =
+        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, Rc::new(counts), budget);
 
     // Single best estimate
     let single_est: AliceAndBobEstimates = estimation
@@ -274,6 +218,120 @@ fn estimate_resources_struct(
     }
 
     Ok((single_py, frontier_py))
+}
+
+/// Python class that encapsulates a single resource-estimation result.
+///
+/// Exposed fields:
+/// - `physical_qubits`
+/// - `runtime_seconds`
+/// - `runtime_hours`
+/// - `total_error`
+/// - `code_distance`
+/// - `code_alpha2`
+/// - `factories`
+/// - `factories_distance`
+/// - `factories_alpha2`
+/// - `factory_fraction_percent`
+/// - `factory_fraction`
+///
+/// # Notes
+/// This object is a light, read-only view tailored for Python consumers. Numeric
+/// values are already converted to convenient units where applicable.
+#[pyclass(frozen)]
+#[derive(Clone)]
+pub struct EstimatesPy {
+    #[pyo3(get)]
+    pub physical_qubits: u64,
+    #[pyo3(get)]
+    pub runtime_seconds: f64,
+    #[pyo3(get)]
+    pub runtime_hours: f64,
+    #[pyo3(get)]
+    pub total_error: f64,
+
+    // logical patch
+    #[pyo3(get)]
+    pub code_distance: u64,
+    #[pyo3(get)]
+    pub code_alpha2: f64,
+
+    // factories
+    #[pyo3(get)]
+    pub factories: u64,
+    #[pyo3(get)]
+    pub factories_distance: u64,
+    #[pyo3(get)]
+    pub factories_alpha2: f64,
+
+    // fractions
+    #[pyo3(get)]
+    pub factory_fraction_percent: f64,
+    #[pyo3(get)]
+    pub factory_fraction: f64,
+}
+
+impl fmt::Display for EstimatesPy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // matches Python's "{:,}" behavior
+        let qubits = self.physical_qubits.to_formatted_string(&Locale::en);
+
+        // Use separator line
+        let sep = "─────────────────────────────";
+
+        // Write the full multi-line string
+        write!(
+            f,
+            "Parameters obtained from the Rust resource estimator\n{}\n\
+             # physical qubits:    {}\n\
+             runtime:             {:.2} hrs\n\
+             total error:         {:.5}\n\
+             {}\n\
+             code distance:       {} (|α|² = {:.2})\n\
+             #factories:          {}\n\
+             factories distance:  {} (|α|² = {:.2})\n\
+             factory fraction:    {:.2}%\n\
+             {}\n",
+            sep,
+            qubits,
+            self.runtime_hours,
+            self.total_error,
+            sep,
+            self.code_distance,
+            self.code_alpha2,
+            self.factories,
+            self.factories_distance,
+            self.factories_alpha2,
+            self.factory_fraction_percent,
+            sep,
+        )
+    }
+}
+
+#[pymethods]
+impl EstimatesPy {
+    fn __str__(&self) -> String {
+        self.to_string()
+    }
+}
+
+/// Converts a core `AliceAndBobEstimates` value into a Python-friendly [`EstimatesPy`].
+impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
+    fn from(e: &crate::AliceAndBobEstimates) -> Self {
+        Self {
+            physical_qubits: e.physical_qubits(),
+            runtime_seconds: e.runtime_seconds(),
+            runtime_hours: e.runtime_hours(),
+            total_error: e.total_error(),
+            code_distance: e.code_distance(),
+            code_alpha2: e.code_alpha2(),
+            factories: e.factories(),
+            factories_distance: e.factories_distance(),
+            factories_alpha2: e.factories_alpha2(),
+            factory_fraction_percent: e.factory_fraction(),
+            factory_fraction: e.factory_fraction_ratio(),
+        }
+    }
 }
 
 /// Python module entry point for the Alice & Bob Q# resource estimator bindings.
