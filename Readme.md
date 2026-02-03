@@ -6,7 +6,7 @@ Q# resource estimator for Alice & Bob's architecture
 This project contains the code for using [Microsoft Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator) (presented in [this paper](https://arxiv.org/abs/2311.05801)) for [Alice & Bob](https://alice-bob.com)'s architecture, using cat qubits and repetition code (LDPC codes might be added in the future).
 
 Shor's algorithm for solving the elliptic curve discrete logarithm problem is used as an example, as in the paper [Phys. Rev. Lett. 131, 040602](https://dx.doi.org/10.1103/PhysRevLett.131.040602) ([arXiv: 2302.06639](https://arxiv.org/abs/2302.06639)).
-Results from the resource estimator can be compared with the one of [the code coming with the paper](https://github.com/ElieGouzien/elliptic_log_cat).
+Results from the resource estimator can be compared with the one of [the code coming with the paper](https://github.com/ElieGouzien/elliptic_log_cat). We also have the new functionality of being able to specify Shor's algorithm in Qualtran and use the Qualtran outputs to perform resource estimation.
 
 Big thanks to Mathias Soeken for having written the initial version of this repository, and rebuilt [Microsoft Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator) to allow our architecture to be handled.
 
