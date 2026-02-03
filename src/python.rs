@@ -1,3 +1,8 @@
+//! Python bindings for the Alice & Bob Q# resource estimator.
+//! ! This module exposes functions to estimate quantum resources from Q# programs
+//! ! and explicit logical counts, returning structured results suitable for Python consumers.
+//! ! It leverages PyO3 to create Python-callable functions and classes.
+
 use pyo3::prelude::*; // brings Python, PyResult, PyModule, Bound, etc.
 use std::fmt;
 use std::rc::Rc;
@@ -12,7 +17,7 @@ use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 /// # Arguments
 /// - `error_total` — If `Some(p)`, split the total error `p` into equal
 ///   target/meas components `(0.5p, 0.5p)` with routing set to `0.0`.
-/// - `error_budget` — If `Some((t, m, r))`, use these explicit per-component values.
+/// - `error_budget` — If `Some((logical_error, magic_state_error, rotation_error))`, use these explicit per-component values.
 ///
 /// # Returns
 /// A fully specified [`ErrorBudget`].
@@ -24,7 +29,9 @@ use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 fn make_budget(error_total: Option<f64>, error_budget: Option<(f64, f64, f64)>) -> ErrorBudget {
     match (error_total, error_budget) {
         (Some(p), None) => ErrorBudget::new(p * 0.5, p * 0.5, 0.0),
-        (None, Some((t, m, r))) => ErrorBudget::new(t, m, r),
+        (None, Some((logical_error, magic_state_error, rotation_error))) => {
+            ErrorBudget::new(logical_error, magic_state_error, rotation_error)
+        }
         (None, None) => ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0),
         _ => unreachable!(),
     }

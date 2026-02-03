@@ -13,3 +13,10 @@ classifiers = [
 dynamic = ["version"]
 [tool.maturin]
 features = ["pyo3/extension-module"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+follow_imports = "silent"
+warn_unused_ignores = true
+disable_error_code = ["import-untyped"]

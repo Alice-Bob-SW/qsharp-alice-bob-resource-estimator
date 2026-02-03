@@ -1,12 +1,18 @@
 from dataclasses import dataclass
 from typing import Any, Tuple
+
 # Import Qualtran tools
-from qualtran.drawing import show_counts_sigma
-from qualtran.resource_counting import get_cost_value,  QubitCount, QECGatesCost
-from qualtran.resource_counting.generalizers import ignore_split_join, ignore_alloc_free, generalize_cvs
+from qualtran.drawing import show_counts_sigma  # type: ignore[import-untyped]
+from qualtran.resource_counting import get_cost_value, QubitCount, QECGatesCost  # type: ignore[import-untyped]
+from qualtran.resource_counting.generalizers import (  # type: ignore[import-untyped]
+    ignore_split_join,
+    ignore_alloc_free,
+    generalize_cvs,
+)  # type: ignore[import-untyped]
 from qualtran_primitives.utilities import ignore_classical_control
 
 from qualtran_primitives.ec_arithmetic.ec_find_key import FindECCPrivateKey_anb, ECPoint
+
 
 @dataclass(frozen=True)
 class ECCInstance:
@@ -27,8 +33,16 @@ def build_instance(cfg: ECCInstance):
 
 def analyze_ecc_private_key_circuit(
     cfg: ECCInstance,
-    graph_generalizer: Tuple[Any, ...] = (ignore_split_join, ignore_alloc_free, generalize_cvs),
-    cost_generalizer: Tuple[Any, ...] = (ignore_split_join, ignore_alloc_free, ignore_classical_control),
+    graph_generalizer: Tuple[Any, ...] = (
+        ignore_split_join,
+        ignore_alloc_free,
+        generalize_cvs,
+    ),
+    cost_generalizer: Tuple[Any, ...] = (
+        ignore_split_join,
+        ignore_alloc_free,
+        ignore_classical_control,
+    ),
 ):
     """
     Builds (G, P), runs FindECCPrivateKey_anb, computes call graph + sigma,
@@ -42,7 +56,6 @@ def analyze_ecc_private_key_circuit(
 
     graph, sigma = findecc.call_graph(graph_generalizer)
 
-    # Optional: keep these side effects outside if you prefer purity
     show_counts_sigma(sigma)
 
     gate_cost = get_cost_value(
@@ -57,8 +70,16 @@ def analyze_ecc_private_key_circuit(
     L_k = [k for k in sigma.keys()]
     dict_sigma = {str(k): sigma[k] for k in L_k}
 
-    num_cx = int(dict_sigma.get("CNOT", 0) + 2 * dict_sigma.get("TwoBitCSwap", 0) + 0.5 * dict_sigma.get("C[CNOT]", 0))
-    num_ccx = int(dict_sigma.get("Toffoli", 0) + dict_sigma.get("TwoBitCSwap", 0) + 0.5 * dict_sigma.get("And", 0))
+    num_cx = int(
+        dict_sigma.get("CNOT", 0)
+        + 2 * dict_sigma.get("TwoBitCSwap", 0)  # type: ignore
+        + 0.5 * dict_sigma.get("C[CNOT]", 0)  # type: ignore
+    )  # type: ignore
+    num_ccx = int(
+        dict_sigma.get("Toffoli", 0)
+        + dict_sigma.get("TwoBitCSwap", 0)  # type: ignore
+        + 0.5 * dict_sigma.get("And", 0)  # type: ignore
+    )  # type: ignore
 
     return {
         "G": G,
