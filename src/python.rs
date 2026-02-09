@@ -355,8 +355,14 @@ impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
 /// Any initialization failure is surfaced as a Python `RuntimeError`.
 #[pymodule]
 fn qsharp_alice_bob_resource_estimator(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
+    // functions
     m.add_function(wrap_pyfunction!(estimate_file_struct, m)?)?;
     m.add_function(wrap_pyfunction!(estimate_resources_struct, m)?)?;
     m.add_function(wrap_pyfunction!(elliptic_curve_estimate_struct, m)?)?;
+
+    // classes
+    m.add_class::<EstimatesPy>()?;
+    m.add_class::<LogicalCountsPy>()?; // optional, but useful since you return it too
+
     Ok(())
 }
