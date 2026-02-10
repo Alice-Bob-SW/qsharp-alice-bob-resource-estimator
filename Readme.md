@@ -2,15 +2,15 @@
 
 # Q# Resource Estimator for Alice & Bob's Architecture
 
-TL;DR Provide logical resource counts from Q#, Qualtran, or explicit `(qubits, cx, ccx)` and get physical resource estimates for Alice & Bob's cat-qubit + repetition-code architecture.
+TL;DR Provide algorithmic resource counts from Q#, Qualtran, or explicit `(qubits, cx, ccx)` and get physical resource estimates for Alice & Bob's cat-qubit + repetition-code architecture.
 
-This repository adapts the Microsoft Q# Resource Estimator to Alice & Bob's architecture. It estimates physical resources from Q# programs or explicit logical counts and exposes a Python API for analysis workflows.
+This repository adapts the Microsoft Q# Resource Estimator to Alice & Bob's architecture. It estimates physical resources from Q# programs or explicit algorithmic counts and exposes a Python API for analysis workflows.
 
 The implementation follows the Q# Resource Estimator described in [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) and the Alice & Bob architecture assumptions detailed in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639). An elliptic-curve discrete logarithm example (from [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)) is included, along with Qualtran-based tooling for deriving logical resources.
 
 ## Highlights
-- Q# -> logical counts -> physical resource estimates
-- Direct ISA-level entry with `(qubits, cx, ccx)` logical counts
+- Q# -> algorithmic resource counts -> physical resource estimates
+- Direct ISA-level entry with `(qubits, cx, ccx)` algorithmic resource counts
 - Seamless Qualtran interface and Shor/ECC-style example
 - Cat-qubit + repetition-code architecture parameters baked into the estimator
 - Python bindings for integration in notebooks and analysis workflows
@@ -21,7 +21,7 @@ The estimator consumes logical-level resources:
 - `D_L`: logical depth (cycles)
 - `N_T`: magic-state demand (Toffoli/CCX count)
 
-These are calculated internally from `(qubits, cx, ccx)` by adding routing qubits and calculating logical cyles following the explanation given in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639). You can provide `(qubits, cx, ccx)` in three ways:
+These are calculated internally from the algorithmic resource counts `(qubits, cx, ccx)` by adding routing qubits, factory qubits and calculating logical cyles following the explanation given in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639). You can provide `(qubits, cx, ccx)` in three ways:
 
 1. **Qualtran Bloq**: Qualtran calculates `(qubits, cx, ccx)`
 2. **Q# program**: the interpreter extracts `(qubits, cx, ccx)`
@@ -31,12 +31,16 @@ These are calculated internally from `(qubits, cx, ccx)` by adding routing qubit
 The estimator returns physical-level estimates such as:
 - Total physical qubits
 - Runtime estimates
-- Error budget usage
+- Total error rate
 - Code distance and cat-qubit parameters
-- Magic-state factory sizing and allocation
+- Magic state factory code distance and average photon number
+- Number of magic state factories
+- Percentage of qubits involved in magic state production
 
 ## Quickstart (Pixi)
 This repo includes a `pixi.toml` for reproducible environments.
+
+To run the setup commands, you’ll need Pixi installed on your machine. This can be easily done by following the installation guide [here](https://pixi.prefix.dev/latest/installation/). Pixi will create and manage the project environment for you, including installing Python, Rust, and any required dependencies defined in the project configuration. In addition, you’ll need a working native build toolchain for your operating system (Xcode Command Line Tools on macOS, build-essential on Linux, or Microsoft C++ Build Tools on Windows), since maturin develop compiles Rust extensions locally.
 
 Install:
 ```bash
@@ -49,10 +53,10 @@ Build the Python extension in the Pixi environment:
 pixi run maturin develop --uv
 ```
 
-To run the setup commands, you need Pixi installed on your machine. Pixi will create and manage the project environment for you, including installing Python, Rust, and required dependencies. You will also need a working native build toolchain for your operating system (Xcode Command Line Tools on macOS, build-essential on Linux, or Microsoft C++ Build Tools on Windows), since `maturin develop` compiles Rust extensions locally.
-
 ## Python Usage
-The module name is `qsharp_alice_bob_resource_estimator`. The API exposes three main functions:
+See `getting_started.ipynb` for an end-to-end walkthrough.
+
+The Rust module name is `qsharp_alice_bob_resource_estimator`. The API exposes three main functions:
 - `estimate_file_struct(...)`
 - `estimate_resources_struct(...)`
 - `elliptic_curve_estimate_struct(...)`
@@ -107,7 +111,7 @@ from ecc_primitives.construction_helpers import (
 )
 from qualtran_helpers.qualtran_wrapper import estimate_from_qualtran
 
-# Initialize configuration for secp256k1 curve
+# Initialize secp256k1 curve parameters and window sizes for the ECC instance (see arXiv:2302.06639)
 cfg = ECCInstance(
     n=256,  # bitsize
     p=2**256 - 2**32 - 977,  # prime
@@ -118,7 +122,7 @@ cfg = ECCInstance(
     scalar=2026,  # private key to find
 )
 
-# Create bloq
+# Create Qualtran bloq
 ecc_circuit = create_ecc_circuit(cfg)
 
 # Perform resource estimation
@@ -130,16 +134,18 @@ ecc_result = estimate_from_qualtran(
 )
 ```
 
-## Notebook
-See `getting_started.ipynb` for an end-to-end walkthrough.
-
 ## Assumptions
 This estimator applies the logical-to-physical mapping described in:
 - [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) for the base Q# Resource Estimator model
 - [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) for Alice & Bob cat-qubit architecture parameters
 
+## Authors
+- Élie Gouzien
+- Nicholas Gialouris
+- Axel Pappalardo
+
 ## Acknowledgements
 Thanks to Mathias Soeken for the initial repository and for rebuilding the Q# resource estimator to support Alice & Bob's architecture.
 
 ## Contact
-For questions not addressed here, please contact Élie Gouzien.
+For questions not addressed here, please contact Élie Gouzien [elie.gouzien@alice-bob.com]
