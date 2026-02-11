@@ -4,9 +4,9 @@
 
 TL;DR Provide algorithmic resource counts from Q#, Qualtran, or explicit `(qubits, cx, ccx)` and get physical resource estimates for Alice & Bob's cat-qubit + repetition-code architecture.
 
-This repository adapts the Microsoft Q# Resource Estimator to Alice & Bob's architecture. It estimates physical resources from Q# programs or explicit algorithmic counts and exposes a Python API for analysis workflows.
+This repository adapts the Microsoft Azure Resource Estimator to Alice & Bob's architecture. It estimates physical resources from Q# or Qualtran programs or explicit algorithmic counts and exposes a Python API for analysis workflows.
 
-The implementation follows the Q# Resource Estimator described in [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) and the Alice & Bob architecture assumptions detailed in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639). An elliptic-curve discrete logarithm example (from [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)) is included, along with Qualtran-based tooling for deriving logical resources.
+The implementation follows the Azure Resource Estimator described in [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) and the Alice & Bob architecture assumptions detailed in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639). An elliptic-curve discrete logarithm example (from [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)) is included, along with Qualtran-based tooling for deriving logical resources.
 
 ## Highlights
 - Q# -> algorithmic resource counts -> physical resource estimates
@@ -48,68 +48,41 @@ pixi install
 pixi run python --version
 ```
 
-Build the Python extension in the Pixi environment:
-```bash
-pixi run maturin develop --uv
-```
-
 ## Python Usage
 See `getting_started.ipynb` for an end-to-end walkthrough.
 
-The Rust module name is `qsharp_alice_bob_resource_estimator`. The API exposes three main functions:
-- `estimate_file_struct(...)`
-- `estimate_resources_struct(...)`
-- `elliptic_curve_estimate_struct(...)`
+The python package is named `anb_estimator`. The API exposes four main functions:
+- `estimate_qsharp_file(...)`
+- `estimate_from_qualtran(...)`
+- `estimate_logical_counts(...)`
+- `estimate_ecc_example(...)`
 
 The additional arguments are
 - `frontier` — If `true`, compute and return the Pareto frontier as structured objects.
 - `error_total` — Overall error target; mutually exclusive with `error_budget`.
 - `error_budget` — Tuple `(target, meas, routing)` for an explicit split.
 
-Example: estimate from a Q# file.
+### Example: estimate from a Q# file.
 ```python
-import qsharp_alice_bob_resource_estimator as qre
+import anb_estimator
 
-estimate, frontier, counts = qre.estimate_file_struct(
-    "qsharp/Adder.qs",
-    frontier=False,
-    error_total=0.333,
-    error_budget=None,
+filename = "../qsharp/Adder.qs"
+single_qsharp, frontier, counts = anb_estimator.estimate_qsharp_file(
+    filename, frontier=True, error_total=None, error_budget=(0.0005, 0.0005, 0.0)
 )
 ```
 
-Example: estimate from explicit logical counts.
-```python
-estimate, frontier = qre.estimate_resources_struct(
-    qubits=100,
-    cx=2000,
-    ccx=300,
-    frontier=True,
-    error_total=0.333,
-    error_budget=None,
-)
-```
+### Example: ECC from Qualtran
 
-Example: elliptic-curve discrete log estimates.
-```python
-estimate, frontier = qre.elliptic_curve_estimate_struct(
-    bit_size=256,
-    window_size=18,
-    frontier=True,
-)
-```
-
-## Qualtran Integration
 Qualtran primitives for Shor/ECC resource derivations live in `ecc_primitives/`. A wrapper is provided that takes as an input any arbitrary Qualtran Bloq and outputs the resource estimation.
-
-Example: ECC from Qualtran
 ```python
+import anb_estimator
+
 # Import Qualtran primitives
 from ecc_primitives.construction_helpers import (
     ECCInstance,
     create_ecc_circuit,
 )
-from qualtran_helpers.qualtran_wrapper import estimate_from_qualtran
 
 # Initialize secp256k1 curve parameters and window sizes for the ECC instance (see arXiv:2302.06639)
 cfg = ECCInstance(
@@ -126,11 +99,36 @@ cfg = ECCInstance(
 ecc_circuit = create_ecc_circuit(cfg)
 
 # Perform resource estimation
-ecc_result = estimate_from_qualtran(
+ecc_result = anb_estimator.estimate_from_qualtran(
     ecc_circuit,
     frontier=False,
     error_total=None,
     error_budget=(0.333 * 0.5, 0.333 * 0.5, 0.0),
+)
+```
+
+### Example: estimate from explicit logical counts.
+```python
+import anb_estimator
+
+estimate, frontier = anb_estimator.estimate_logical_counts(
+    qubits=100,
+    cx=2000,
+    ccx=300,
+    frontier=True,
+    error_total=0.333,
+    error_budget=None,
+)
+```
+
+### Example: elliptic-curve discrete log estimates.
+```python
+import anb_estimator
+
+estimate, frontier = anb_estimator.estimate_ecc_example(
+    bit_size=256,
+    window_size=18,
+    frontier=True,
 )
 ```
 

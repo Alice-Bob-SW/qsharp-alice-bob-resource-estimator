@@ -35,6 +35,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "anb-estimator"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "num-bigint",
+ "num-complex",
+ "num-format",
+ "num-traits",
+ "once_cell",
+ "pyo3",
+ "qsc",
+ "resource_estimator",
+]
+
+[[package]]
 name = "anstream"
 version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -883,22 +899,6 @@ dependencies = [
  "indenter",
  "qsc_data_structures",
  "rustc-hash",
-]
-
-[[package]]
-name = "qsharp-alice-bob-resource-estimator"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "num-bigint",
- "num-complex",
- "num-format",
- "num-traits",
- "once_cell",
- "pyo3",
- "qsc",
- "resource_estimator",
 ]
 
 [[package]]

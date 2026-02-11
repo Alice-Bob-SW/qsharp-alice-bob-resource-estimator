@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, Union
-import qsharp_alice_bob_resource_estimator as qre  # type: ignore[import-untyped]
+from . import _native as qre
 from qualtran import Bloq  # type: ignore[import-untyped]
-from qualtran_helpers.bloq_to_logical_counts import count_resources
+from .bloq_to_logical_counts import count_resources
 
 
 ErrorBudget = Tuple[float, float, float]
@@ -46,7 +46,7 @@ def estimate_from_qualtran(
         assert len(error_budget) == 3, "error_budget must be a 3-tuple"
         assert all(x >= 0 for x in error_budget), "error_budget entries must be >= 0"
 
-    estimate, frontier_data = qre.estimate_resources_struct(  # type: ignore
+    estimate, frontier_data = qre.estimate_logical_counts(  # type: ignore
         num_qbits,
         num_cx,
         num_ccx,

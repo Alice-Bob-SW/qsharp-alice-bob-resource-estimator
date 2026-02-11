@@ -87,7 +87,7 @@ impl From<&LogicalCounts> for LogicalCountsPy {
 /// - Failures during resource estimation.
 ///
 #[pyfunction]
-fn estimate_file_struct(
+fn estimate_qsharp_file(
     filename: &str,
     frontier: bool,
     error_total: Option<f64>,
@@ -154,7 +154,7 @@ fn estimate_file_struct(
 /// # Errors
 /// Propagates example execution or estimation errors as Python `RuntimeError`s.
 #[pyfunction]
-fn elliptic_curve_estimate_struct(
+fn estimate_ecc_example(
     bit_size: u64,
     window_size: u64,
     frontier: bool,
@@ -187,7 +187,7 @@ fn elliptic_curve_estimate_struct(
 /// # Errors
 /// Propagates errors from the physical resource estimator.
 #[pyfunction]
-fn estimate_resources_struct(
+fn estimate_logical_counts(
     qubits: u64,
     cx: u64,
     ccx: u64,
@@ -347,18 +347,19 @@ impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
 /// and run the built-in ECC example in both pretty-printed and structured forms.
 ///
 /// # Exposed callables
-/// - `estimate_file_struct(...)`
-/// - `estimate_resources_struct(...)`
-/// - `elliptic_curve_estimate_struct(...)`
+/// - `estimate_qsharp_file(...)`
+/// - `estimate_logical_counts(...)`
+/// - `estimate_ecc_example(...)`
 ///
 /// # Errors
 /// Any initialization failure is surfaced as a Python `RuntimeError`.
 #[pymodule]
+#[pyo3(name = "_native")]
 fn qsharp_alice_bob_resource_estimator(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     // functions
-    m.add_function(wrap_pyfunction!(estimate_file_struct, m)?)?;
-    m.add_function(wrap_pyfunction!(estimate_resources_struct, m)?)?;
-    m.add_function(wrap_pyfunction!(elliptic_curve_estimate_struct, m)?)?;
+    m.add_function(wrap_pyfunction!(estimate_qsharp_file, m)?)?;
+    m.add_function(wrap_pyfunction!(estimate_logical_counts, m)?)?;
+    m.add_function(wrap_pyfunction!(estimate_ecc_example, m)?)?;
 
     // classes
     m.add_class::<EstimatesPy>()?;

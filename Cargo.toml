@@ -1,7 +1,14 @@
 [package]
-name = "qsharp-alice-bob-resource-estimator"
+name = "anb-estimator"
 version = "0.1.0"
 edition = "2021"
+
+description = "A resource estimator for running quantum algorithms on Alice and Bob's hardware."
+readme = "Readme.md"
+keywords = ["quantum", "qsharp", "resource-estimation"]
+categories = ["science"]
+# authors = ["Nicholas Gialouris <nicholas.gialouris@alice-bob.com>"]  # optional
+rust-version = "1.75"
 
 [lib]
 # Build both the normal Rust lib and the Python extension (.so/.pyd)
@@ -9,17 +16,15 @@ name = "qsharp_alice_bob_resource_estimator"
 crate-type = ["rlib", "cdylib"]
 
 [features]
-# Turn on the PyO3 entrypoint only when we build for Python
-python = ["pyo3/extension-module"]
-default = ["python"]
+default = []
+python = ["dep:pyo3", "pyo3/extension-module"]
+cli = ["dep:clap"]
 
 
 [dependencies]
-# make PyO3 optional so plain Rust builds don't require Python
 pyo3 = { version = "0.25", optional = true }
-
 anyhow = "1.0.81"
-clap = { version = "4.5.4", features = ["derive"] }
+clap = { version = "4.5.4", features = ["derive"], optional = true}
 num-bigint = "0.4"
 num-complex = "0.4"
 num-traits = "0.2"
@@ -28,6 +33,11 @@ resource_estimator = { git = "https://github.com/microsoft/qsharp.git", tag = "v
 once_cell = "1.21.3"
 num-format = "0.4.4"
 
+[[bin]]
+name = "anb-estimator"
+path = "src/main.rs"
+required-features = ["cli"]
+
 [lints.clippy]
 mod_module_files = "warn"
 pedantic = { level = "warn", priority = -1 }
@@ -35,7 +45,3 @@ unwrap_used = "warn"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
-
-
-
-

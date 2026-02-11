@@ -1,9 +1,9 @@
 [build-system]
-requires = ["maturin>=1.9,<2.0"]
+requires = ["maturin>=1.8,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "interface_test"
+name = "anb-estimator"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
@@ -12,7 +12,8 @@ classifiers = [
 ]
 dynamic = ["version"]
 [tool.maturin]
-features = ["pyo3/extension-module"]
+features = ["python"]
+module-name = "anb_estimator._native"
 
 [tool.mypy]
 strict = true
@@ -20,3 +21,12 @@ ignore_missing_imports = true
 follow_imports = "silent"
 warn_unused_ignores = true
 disable_error_code = ["import-untyped"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.format]
+quote-style = "preserve"
+skip-magic-trailing-comma = true
+
