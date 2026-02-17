@@ -49,16 +49,16 @@ def count_resources(
     num_cx = 0
     num_ccx = 0
     if "CNOT" in dict_sigma.keys():
-        num_cx += dict_sigma["CNOT"]
+        num_cx += dict_sigma["CNOT"] #type: ignore
     if "TwoBitCSwap" in dict_sigma.keys():  # needs to be decomposed on A&B architecture
-        num_cx += 2 * dict_sigma["TwoBitCSwap"]
-        num_ccx += dict_sigma["TwoBitCSwap"]
+        num_cx += 2 * dict_sigma["TwoBitCSwap"] #type: ignore
+        num_ccx += dict_sigma["TwoBitCSwap"] #type: ignore
     if "C[CNOT]" in dict_sigma.keys():
-        num_cx += 0.5 * dict_sigma["C[CNOT]"]
+        num_cx += 0.5 * dict_sigma["C[CNOT]"] #type: ignore
 
     if "Toffoli" in dict_sigma.keys():  # needs to be decomposed on A&B architecture
-        num_ccx += dict_sigma["Toffoli"]
+        num_ccx += dict_sigma["Toffoli"] #type: ignore
     if "And" in dict_sigma.keys():  # we count And as 0.5*Toffoli
-        num_ccx += dict_sigma["And"]
+        num_ccx += dict_sigma["And"] #type: ignore
 
     return num_qubits, int(num_cx), int(num_ccx)

@@ -26,14 +26,23 @@ use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 /// - If both `error_total` and `error_budget` are `None`, a default split of
 ///   `(0.333*0.5, 0.333*0.5, 0.0)` is used (conservative placeholder).
 /// - Supplying both `Some` variants is not supported and is treated as unreachable.
-fn make_budget(error_total: Option<f64>, error_budget: Option<(f64, f64, f64)>) -> ErrorBudget {
+fn make_budget(
+    error_total: Option<f64>,
+    error_budget: Option<(f64, f64, f64)>,
+) -> PyResult<ErrorBudget> {
     match (error_total, error_budget) {
-        (Some(p), None) => ErrorBudget::new(p * 0.5, p * 0.5, 0.0),
+        (Some(p), None) => Ok(ErrorBudget::new(p * 0.5, p * 0.5, 0.0)),
         (None, Some((logical_error, magic_state_error, rotation_error))) => {
-            ErrorBudget::new(logical_error, magic_state_error, rotation_error)
+            Ok(ErrorBudget::new(
+                logical_error,
+                magic_state_error,
+                rotation_error,
+            ))
         }
-        (None, None) => ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0),
-        _ => unreachable!(),
+        (None, None) => Ok(ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0)),
+        (Some(_), Some(_)) => Err(pyo3::exceptions::PyValueError::new_err(
+            "Provide either error_total or error_budget, not both.",
+        )),
     }
 }
 
@@ -74,7 +83,7 @@ impl From<&LogicalCounts> for LogicalCountsPy {
 /// - `filename` — Path to a Q# source file to be parsed and interpreted for counts.
 /// - `frontier` — If `true`, also compute a frontier of estimates (e.g., different distances/α).
 /// - `error_total` — Overall error target `p_total`; mutually exclusive with `error_budget`.
-/// - `error_budget` — Tuple `(target, meas, routing)` if an explicit split is desired.
+/// - `error_budget` — Tuple `(logical, magic_state, rotation)` if an explicit split is desired.
 ///
 /// # Returns
 /// A 3-tuple:
@@ -87,7 +96,7 @@ impl From<&LogicalCounts> for LogicalCountsPy {
 /// - Failures during resource estimation.
 ///
 #[pyfunction]
-fn estimate_qsharp_file(
+fn estimate_qsharp_file_rust(
     filename: &str,
     frontier: bool,
     error_total: Option<f64>,
@@ -97,7 +106,7 @@ fn estimate_qsharp_file(
     let qubit = CatQubit::new();
     let qec = RepetitionCode::new();
     let builder = ToffoliBuilder::default();
-    let budget = make_budget(error_total, error_budget);
+    let budget = make_budget(error_total, error_budget)?;
 
     // Put counts behind an Rc so we can both pass it into PRE and also derive a Python view
     let counts = std::rc::Rc::new(
@@ -154,7 +163,7 @@ fn estimate_qsharp_file(
 /// # Errors
 /// Propagates example execution or estimation errors as Python `RuntimeError`s.
 #[pyfunction]
-fn estimate_ecc_example(
+fn estimate_ecc_example_rust(
     bit_size: u64,
     window_size: u64,
     frontier: bool,
@@ -177,7 +186,7 @@ fn estimate_ecc_example(
 /// - `ccx` — Logical CCX (Toffoli) gate count.
 /// - `frontier` — If `true`, compute and return the frontier as structured objects.
 /// - `error_total` — Overall error target; mutually exclusive with `error_budget`.
-/// - `error_budget` — Tuple `(target, meas, routing)` for an explicit split.
+/// - `error_budget` — Tuple `(topological error budget, magic state error budget, rotation error budget)` for an explicit split.
 ///
 /// # Returns
 /// A tuple:
@@ -187,7 +196,7 @@ fn estimate_ecc_example(
 /// # Errors
 /// Propagates errors from the physical resource estimator.
 #[pyfunction]
-fn estimate_logical_counts(
+fn estimate_logical_counts_rust(
     qubits: u64,
     cx: u64,
     ccx: u64,
@@ -199,7 +208,7 @@ fn estimate_logical_counts(
     let qubit = CatQubit::new();
     let qec = RepetitionCode::new();
     let builder = ToffoliBuilder::default();
-    let budget = make_budget(error_total, error_budget);
+    let budget = make_budget(error_total, error_budget)?;
 
     let counts = LogicalCounts::new(qubits, cx, ccx);
     let estimation =
@@ -357,9 +366,9 @@ impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
 #[pyo3(name = "_native")]
 fn qsharp_alice_bob_resource_estimator(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     // functions
-    m.add_function(wrap_pyfunction!(estimate_qsharp_file, m)?)?;
-    m.add_function(wrap_pyfunction!(estimate_logical_counts, m)?)?;
-    m.add_function(wrap_pyfunction!(estimate_ecc_example, m)?)?;
+    m.add_function(wrap_pyfunction!(estimate_qsharp_file_rust, m)?)?;
+    m.add_function(wrap_pyfunction!(estimate_logical_counts_rust, m)?)?;
+    m.add_function(wrap_pyfunction!(estimate_ecc_example_rust, m)?)?;
 
     // classes
     m.add_class::<EstimatesPy>()?;
