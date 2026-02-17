@@ -198,7 +198,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/6d/08/ad5afb5b17c33e57f34189cebbc9b5435914b5cf7cb9fe17a6b65469d8c6/qref-0.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ed/9a/deac9c87f9e6170f70618555fc08a30adce0ead55b8443984866c7120a89/qsharp-1.22.0-cp39-abi3-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/f5/c7/aca01a7132c6d541e99a475d99ad2ae7235d949c1e03b60212b8cf197ae0/qsharp_widgets-1.22.0-py2.py3-none-any.whl
-      - pypi: git+https://github.com/quantumlib/Qualtran#804853658a8159e6ef279ae4f8e74958eeed6ad9
+      - pypi: git+https://github.com/quantumlib/Qualtran#65a1e326800cd5bc65cec735c29fec1c69c6ce98
       - pypi: https://files.pythonhosted.org/packages/4c/be/cc32aaf468c5856e0c738ae7b2e494d12d50db3906c751834ca5f0e157fb/quimb-1.11.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2c/58/ca301544e1fa93ed4f80d724bf5b194f6e4b945841c5bfd555878eea9fcb/referencing-0.37.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl
@@ -437,7 +437,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/6d/08/ad5afb5b17c33e57f34189cebbc9b5435914b5cf7cb9fe17a6b65469d8c6/qref-0.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/db/97/dcf5fb7da1ac5acf4dcf623200fd1c236b56142a7d51a9cf0dd4febdc779/qsharp-1.22.0-cp39-abi3-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/f5/c7/aca01a7132c6d541e99a475d99ad2ae7235d949c1e03b60212b8cf197ae0/qsharp_widgets-1.22.0-py2.py3-none-any.whl
-      - pypi: git+https://github.com/quantumlib/Qualtran#804853658a8159e6ef279ae4f8e74958eeed6ad9
+      - pypi: git+https://github.com/quantumlib/Qualtran#65a1e326800cd5bc65cec735c29fec1c69c6ce98
       - pypi: https://files.pythonhosted.org/packages/4c/be/cc32aaf468c5856e0c738ae7b2e494d12d50db3906c751834ca5f0e157fb/quimb-1.11.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2c/58/ca301544e1fa93ed4f80d724bf5b194f6e4b945841c5bfd555878eea9fcb/referencing-0.37.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl
@@ -558,7 +558,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-3.13.12-h20e6be0_100_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-8_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/readline-8.3-h46df422_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ruff-0.15.0-h279115b_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ruff-0.15.1-h279115b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tk-8.6.13-h010d191_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.4.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
@@ -683,7 +683,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/6d/08/ad5afb5b17c33e57f34189cebbc9b5435914b5cf7cb9fe17a6b65469d8c6/qref-0.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f5/49/4908f3810c0f86a4b9c5fff83ada46767d034421f76633f17ab6d7e4eac5/qsharp-1.25.1-cp310-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/d0/9a/61b9394c2c07ff8fca7132e3e7142a0df614474acfee82e43a23a04ab9d6/qsharp_widgets-1.25.1-py2.py3-none-any.whl
-      - pypi: git+https://github.com/quantumlib/Qualtran#804853658a8159e6ef279ae4f8e74958eeed6ad9
+      - pypi: git+https://github.com/quantumlib/Qualtran#65a1e326800cd5bc65cec735c29fec1c69c6ce98
       - pypi: https://files.pythonhosted.org/packages/37/f5/042d6a5d9803330f1bb18f75d9baf712676596161eee2104a2ae503d2de7/quimb-1.12.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2c/58/ca301544e1fa93ed4f80d724bf5b194f6e4b945841c5bfd555878eea9fcb/referencing-0.37.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl
@@ -790,7 +790,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-9.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/python-3.13.12-h09917c8_100_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-8_cp313.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/ruff-0.15.0-h213852a_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/ruff-0.15.1-h213852a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tbb-2022.3.0-h3155e25_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tk-8.6.13-h6ed50ae_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.4.0-pyhcf101f3_0.conda
@@ -926,7 +926,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/6d/08/ad5afb5b17c33e57f34189cebbc9b5435914b5cf7cb9fe17a6b65469d8c6/qref-0.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/7c/56404efca620931085fa9f81159cb06ffa6944c54e982a20757221ae3547/qsharp-1.25.1-cp310-abi3-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/d0/9a/61b9394c2c07ff8fca7132e3e7142a0df614474acfee82e43a23a04ab9d6/qsharp_widgets-1.25.1-py2.py3-none-any.whl
-      - pypi: git+https://github.com/quantumlib/Qualtran#804853658a8159e6ef279ae4f8e74958eeed6ad9
+      - pypi: git+https://github.com/quantumlib/Qualtran#65a1e326800cd5bc65cec735c29fec1c69c6ce98
       - pypi: https://files.pythonhosted.org/packages/37/f5/042d6a5d9803330f1bb18f75d9baf712676596161eee2104a2ae503d2de7/quimb-1.12.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2c/58/ca301544e1fa93ed4f80d724bf5b194f6e4b945841c5bfd555878eea9fcb/referencing-0.37.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl
@@ -6720,37 +6720,38 @@ packages:
   - anywidget>=0.9.21
   - jupyterlab ; extra == 'dev'
   - watchfiles ; extra == 'dev'
-- pypi: git+https://github.com/quantumlib/Qualtran#804853658a8159e6ef279ae4f8e74958eeed6ad9
+- pypi: git+https://github.com/quantumlib/Qualtran#65a1e326800cd5bc65cec735c29fec1c69c6ce98
   name: qualtran
   version: 0.8.0.dev0
   requires_dist:
   - attrs>=23.2.0
+  - bartiq==0.12.1
   - cachetools>=5.3
-  - networkx
-  - numpy>=1.26,<3.0
-  - sympy
   - cirq-core~=1.4
+  - dash
   - fxpmath
   - galois
+  - ipython
+  - ipywidgets
+  - matplotlib
+  - mpmath
   - nbconvert
   - nbformat
+  - networkx
   - notebook
-  - pydot
-  - ipython
-  - matplotlib
-  - ipywidgets
+  - numpy>=1.26,<3.0
+  - pennylane
   - plotly
-  - dash
-  - quimb
+  - protobuf
+  - pydot
+  - pyzx
+  - qref==0.11.0
   - qsharp
   - qsharp-widgets
-  - qref==0.11.0
-  - bartiq==0.12.1
-  - pyzx
-  - pennylane
-  - protobuf
+  - quimb
+  - sympy
   - typing-extensions>=4.10.0
-  - mpmath
+  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/4c/be/cc32aaf468c5856e0c738ae7b2e494d12d50db3906c751834ca5f0e157fb/quimb-1.11.2-py3-none-any.whl
   name: quimb
   version: 1.11.2
@@ -6910,10 +6911,10 @@ packages:
   version: 0.30.0
   sha256: e7536cd91353c5273434b4e003cbda89034d67e7710eab8761fd918ec6c69cf8
   requires_python: '>=3.10'
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/ruff-0.15.0-h279115b_0.conda
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/ruff-0.15.1-h279115b_0.conda
   noarch: python
-  sha256: d0d55cd450f7e66b98aec49bd76e7476badeed78563988003766d4dd5c4850fa
-  md5: 67e036614accdbee477daac1ba2441b9
+  sha256: cd5010c084099f8f8796d2fe0caed5b1b20d2e0d205f8f493279b77dada04a4a
+  md5: c11e2249e0c4b2de13906fe34684f4f0
   depends:
   - python
   - __osx >=11.0
@@ -6923,12 +6924,12 @@ packages:
   license_family: MIT
   purls:
   - pkg:pypi/ruff?source=compressed-mapping
-  size: 8383076
-  timestamp: 1770153856208
-- conda: https://conda.anaconda.org/conda-forge/win-64/ruff-0.15.0-h213852a_0.conda
+  size: 8357018
+  timestamp: 1770954744394
+- conda: https://conda.anaconda.org/conda-forge/win-64/ruff-0.15.1-h213852a_0.conda
   noarch: python
-  sha256: 2a35ebac465ee4d278cb7ef9dd45672927652d64924bf59dc6044e98951ac3b5
-  md5: 5a017ed8ef2bfb6e69cbf5a3e7eba820
+  sha256: e0e77250a223fd55157109f8c5be6a99541779be9f3d24b7cb3e95694cfd0918
+  md5: 4a704d342fc4836fed79c7f9a69addf1
   depends:
   - python
   - vc >=14.3,<15
@@ -6938,8 +6939,8 @@ packages:
   license_family: MIT
   purls:
   - pkg:pypi/ruff?source=compressed-mapping
-  size: 9623640
-  timestamp: 1770153731442
+  size: 9632652
+  timestamp: 1770954647574
 - pypi: https://files.pythonhosted.org/packages/23/ae/7b6bbae5e0487ee42072dc6a46edf5db9731a0701ed648db22121fb7490c/rustworkx-0.17.1-cp39-abi3-macosx_11_0_arm64.whl
   name: rustworkx
   version: 0.17.1

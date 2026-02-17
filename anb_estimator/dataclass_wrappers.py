@@ -1,11 +1,7 @@
 from dataclasses import dataclass
 
-try:
-    from ._native import LogicalCountsPy, EstimatesPy  # type: ignore[import-untyped]
-except ImportError:
-    from _native import LogicalCountsPy, EstimatesPy  # type: ignore[import-untyped]
 
-
+from anb_estimator._native import LogicalCountsPy, EstimatesPy  # type: ignore[import-untyped]
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,14 +50,11 @@ class Estimates:
             runtime_seconds=float(inner.runtime_seconds),
             runtime_hours=float(inner.runtime_hours),
             total_error=float(inner.total_error),
-
             code_distance=int(inner.code_distance),
             code_alpha2=float(inner.code_alpha2),
-
             factories=int(inner.factories),
             factories_distance=int(inner.factories_distance),
             factories_alpha2=float(inner.factories_alpha2),
-
             factory_fraction_percent=float(inner.factory_fraction_percent),
             factory_fraction=float(inner.factory_fraction),
         )

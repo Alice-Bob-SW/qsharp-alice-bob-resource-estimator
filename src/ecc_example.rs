@@ -24,36 +24,6 @@ fn elliptic_curve_crypto_count(bit_size: u64, window_size: u64) -> LogicalCounts
     LogicalCounts::new(qubit_count, cx_count, ccx_count)
 }
 
-/// Run the ECC example and return the output lines (instead of printing).
-pub fn run_ecc_example(bit_size: u64, window_size: u64) -> Result<Vec<String>> {
-    let qubit = CatQubit::new();
-    let qec = RepetitionCode::new();
-    let builder = ToffoliBuilder::default();
-    let count = elliptic_curve_crypto_count(bit_size, window_size);
-    let budget = ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0);
-
-    let estimation =
-        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, Rc::new(count), budget);
-
-    let mut out = Vec::new();
-
-    let result: AliceAndBobEstimates = estimation.estimate()?.into();
-    out.push(
-        "Estimates from pre-computed logical count (elliptic curve discrete logarithm):".into(),
-    );
-    out.push(format!("{result}"));
-
-    out.push("----------------------------------------".into());
-    out.push("Exploration of good estimates from pre-computed logical count (elliptic curve discrete logarithm):".into());
-
-    let results = estimation.build_frontier()?;
-    for r in results {
-        out.push(AliceAndBobEstimates::from(r).to_string());
-    }
-
-    Ok(out)
-}
-
 /// Compute ECC estimates and return the core result(s), not strings.
 /// If `frontier == false`, the frontier vec is empty.
 pub fn run_ecc_example_struct(

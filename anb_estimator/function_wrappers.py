@@ -1,17 +1,15 @@
 from typing import Optional, Tuple, Union
-
-try:
-    from ._native import estimate_qsharp_file_rust, estimate_logical_counts_rust, estimate_ecc_example_rust, EstimatesPy  # type: ignore[import-untyped]
-except ImportError:
-    from _native import estimate_qsharp_file_rust, estimate_logical_counts_rust, estimate_ecc_example_rust, EstimatesPy  # type: ignore[import-untyped]
 from qualtran import Bloq  # type: ignore[import-untyped]
+from anb_estimator.bloq_to_logical_counts import count_resources
 
-try:
-    from .bloq_to_logical_counts import count_resources
-    from .dataclass_wrappers import Estimates
-except ImportError:
-    from bloq_to_logical_counts import count_resources
-    from dataclass_wrappers import Estimates
+from anb_estimator._native import (  # type: ignore[import-untyped]
+    _estimate_qsharp_file,
+    _estimate_logical_counts,
+    _estimate_ecc_example,
+)
+
+
+from anb_estimator.dataclass_wrappers import Estimates, LogicalCounts  # type: ignore[import-untyped]
 
 
 ErrorBudget = Tuple[float, float, float]
@@ -22,7 +20,7 @@ def estimate_from_qualtran(
     frontier: bool,
     error_total: Optional[float] = None,
     error_budget: Optional[ErrorBudget] = None,
-) -> Union[EstimatesPy, tuple[EstimatesPy, list]]:  # type: ignore
+) -> Union[Estimates, tuple[Estimates, list]]:  # type: ignore
     """
     Runs the Qualtran estimation and returns the results as an EstimatesPy class.
 
@@ -44,35 +42,29 @@ def estimate_from_qualtran(
     except Exception as exc:
         raise AssertionError("bloq is not a valid qualtran Bloq") from exc
 
-    # --- validate error inputs ---
-    if error_total is None and error_budget is None:
-        print("No error budget provided. Falling back to default error budget (0.333 * 0.5, 0.333 * 0.5, 0.0).")
-    
-    if error_total is not None and error_budget is not None:
-        raise ValueError("Exactly one of error_total or error_budget must be set")
-
-    if error_total is not None:
-        assert error_total >= 0, "error_total must be >= 0"
-
-    if error_budget is not None:
-        assert len(error_budget) == 3, "error_budget must be a 3-tuple"
-        assert all(x >= 0 for x in error_budget), "error_budget entries must be >= 0"
-
-    estimate, frontier_data = estimate_logical_counts(  # type: ignore
-        num_qbits, #type: ignore
-        num_cx,
-        num_ccx,
-        frontier=frontier,
-        error_total=error_total,
-        error_budget=error_budget,
-    )
-
     if frontier:
+        estimate, frontier_data = _estimate_logical_counts(  # type: ignore
+            num_qbits,  # type: ignore
+            num_cx,
+            num_ccx,
+            frontier=frontier,
+            error_total=error_total,
+            error_budget=error_budget,
+        )
         frontier_converted = [Estimates.from_rust(e) for e in frontier_data]
         return Estimates.from_rust(estimate), frontier_converted
     else:
+        estimate, _frontier_data = _estimate_logical_counts(  # type: ignore
+            num_qbits,  # type: ignore
+            num_cx,
+            num_ccx,
+            frontier=frontier,
+            error_total=error_total,
+            error_budget=error_budget,
+        )
         return Estimates.from_rust(estimate)
-    
+
+
 def estimate_logical_counts(
     num_qbits: int,
     num_cx: int,
@@ -80,9 +72,9 @@ def estimate_logical_counts(
     frontier: bool,
     error_total: Optional[float] = None,
     error_budget: Optional[ErrorBudget] = None,
-) -> Union[EstimatesPy, tuple[EstimatesPy, list]]:  # type: ignore
+) -> Union[Estimates, tuple[Estimates, list]]:  # type: ignore
     """
-    Runs the estimation and returns the results as an EstimatesPy class.
+    Runs the estimation and returns the results as an Estimates class.
 
     Args:
         num_qbits (int): Logical (algorithm) qubit count.
@@ -99,10 +91,12 @@ def estimate_logical_counts(
     assert num_qbits >= 0, "num_qbits must be >= 0"
     assert num_cx >= 0, "num_cx must be >= 0"
     assert num_ccx >= 0, "num_ccx must be >= 0"
-    
+
     if error_total is None and error_budget is None:
-        print("No error budget provided. Falling back to default error budget (0.333 * 0.5, 0.333 * 0.5, 0.0).")
-    
+        print(
+            "No error budget provided. Falling back to default error budget (0.333 * 0.5, 0.333 * 0.5, 0.0).\n"
+        )
+
     if error_total is not None and error_budget is not None:
         raise ValueError("Exactly one of error_total or error_budget must be set")
 
@@ -113,7 +107,7 @@ def estimate_logical_counts(
         assert len(error_budget) == 3, "error_budget must be a 3-tuple"
         assert all(x >= 0 for x in error_budget), "error_budget entries must be >= 0"
 
-    estimate, frontier_data = estimate_logical_counts_rust(  # type: ignore
+    estimate, frontier_data = _estimate_logical_counts(  # type: ignore
         num_qbits,
         num_cx,
         num_ccx,
@@ -127,8 +121,11 @@ def estimate_logical_counts(
         return Estimates.from_rust(estimate), frontier_converted
     else:
         return Estimates.from_rust(estimate)
-    
-def estimate_ecc_example(bit_size: int, window_size: int, frontier: bool) -> Union[EstimatesPy, tuple[EstimatesPy, list]]:  # type: ignore
+
+
+def estimate_ecc_example(
+    bit_size: int, window_size: int, frontier: bool
+) -> Union[Estimates, tuple[Estimates, list]]:  # type: ignore
     """
     Runs the estimation for the ECC example and returns the results as an EstimatesPy class.
 
@@ -143,10 +140,8 @@ def estimate_ecc_example(bit_size: int, window_size: int, frontier: bool) -> Uni
     assert bit_size > 0, "bit_size must be > 0"
     assert window_size > 0, "window_size must be > 0"
 
-    estimate, frontier_data = estimate_ecc_example_rust(  # type: ignore
-        bit_size,
-        window_size,
-        frontier=frontier,
+    estimate, frontier_data = _estimate_ecc_example(  # type: ignore
+        bit_size, window_size, frontier=frontier
     )
 
     if frontier:
@@ -155,7 +150,13 @@ def estimate_ecc_example(bit_size: int, window_size: int, frontier: bool) -> Uni
     else:
         return Estimates.from_rust(estimate)
 
-def estimate_qsharp_file(file_path: str, frontier: bool, error_total: Optional[float] = None, error_budget: Optional[ErrorBudget] = None) -> Union[EstimatesPy, tuple[EstimatesPy, list]]:  # type: ignore
+
+def estimate_qsharp_file(
+    file_path: str,
+    frontier: bool,
+    error_total: Optional[float] = None,
+    error_budget: Optional[ErrorBudget] = None,
+) -> Union[tuple[Estimates, LogicalCounts], tuple[Estimates, list[Estimates], LogicalCounts]]:  # type: ignore
     """
     Runs the estimation for a Q# file and returns the results as a dataclass.
 
@@ -180,18 +181,20 @@ def estimate_qsharp_file(file_path: str, frontier: bool, error_total: Optional[f
     if error_total is not None and error_budget is not None:
         raise ValueError("Exactly one of error_total or error_budget must be set")
     if error_total is None and error_budget is None:
-        print("No error budget provided. Falling back to default error budget (0.333 * 0.5, 0.333 * 0.5, 0.0).")
-
-    estimate, frontier_data = estimate_qsharp_file_rust(  # type: ignore
-        file_path,
-        frontier=frontier,
-        error_total=error_total,
-        error_budget=error_budget,
-    )
-
-    frontier_converted = [Estimates.from_rust(e) for e in frontier_data]
+        print(
+            "No error budget provided. Falling back to default error budget (0.333 * 0.5, 0.333 * 0.5, 0.0)."
+        )
 
     if frontier:
-        return Estimates.from_rust(estimate), frontier_converted
+        estimate, frontier_data, counts = _estimate_qsharp_file(  # type: ignore
+            file_path, frontier=frontier, error_total=error_total, error_budget=error_budget
+        )
+        frontier_converted = [Estimates.from_rust(e) for e in frontier_data]
+        counts_converted = LogicalCounts.from_rust(counts)
+        return Estimates.from_rust(estimate), frontier_converted, counts_converted
     else:
-        return Estimates.from_rust(estimate)
+        estimate, frontier, counts = _estimate_qsharp_file(  # type: ignore
+            file_path, frontier=frontier, error_total=error_total, error_budget=error_budget
+        )
+        counts_converted = LogicalCounts.from_rust(counts)
+        return Estimates.from_rust(estimate), counts_converted

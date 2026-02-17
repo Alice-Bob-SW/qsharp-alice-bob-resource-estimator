@@ -96,7 +96,7 @@ impl From<&LogicalCounts> for LogicalCountsPy {
 /// - Failures during resource estimation.
 ///
 #[pyfunction]
-fn estimate_qsharp_file_rust(
+fn _estimate_qsharp_file(
     filename: &str,
     frontier: bool,
     error_total: Option<f64>,
@@ -163,12 +163,12 @@ fn estimate_qsharp_file_rust(
 /// # Errors
 /// Propagates example execution or estimation errors as Python `RuntimeError`s.
 #[pyfunction]
-fn estimate_ecc_example_rust(
+fn _estimate_ecc_example(
     bit_size: u64,
     window_size: u64,
     frontier: bool,
 ) -> PyResult<(EstimatesPy, Vec<EstimatesPy>)> {
-    let (single, list) = crate::examples::run_ecc_example_struct(bit_size, window_size, frontier)
+    let (single, list) = crate::ecc_example::run_ecc_example_struct(bit_size, window_size, frontier)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
 
     Ok((
@@ -196,7 +196,7 @@ fn estimate_ecc_example_rust(
 /// # Errors
 /// Propagates errors from the physical resource estimator.
 #[pyfunction]
-fn estimate_logical_counts_rust(
+fn _estimate_logical_counts(
     qubits: u64,
     cx: u64,
     ccx: u64,
@@ -356,9 +356,9 @@ impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
 /// and run the built-in ECC example in both pretty-printed and structured forms.
 ///
 /// # Exposed callables
-/// - `estimate_qsharp_file(...)`
-/// - `estimate_logical_counts(...)`
-/// - `estimate_ecc_example(...)`
+/// - `_estimate_qsharp_file(...)`
+/// - `_estimate_logical_counts(...)`
+/// - `_estimate_ecc_example(...)`
 ///
 /// # Errors
 /// Any initialization failure is surfaced as a Python `RuntimeError`.
@@ -366,9 +366,9 @@ impl From<&crate::AliceAndBobEstimates> for EstimatesPy {
 #[pyo3(name = "_native")]
 fn qsharp_alice_bob_resource_estimator(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     // functions
-    m.add_function(wrap_pyfunction!(estimate_qsharp_file_rust, m)?)?;
-    m.add_function(wrap_pyfunction!(estimate_logical_counts_rust, m)?)?;
-    m.add_function(wrap_pyfunction!(estimate_ecc_example_rust, m)?)?;
+    m.add_function(wrap_pyfunction!(_estimate_qsharp_file, m)?)?;
+    m.add_function(wrap_pyfunction!(_estimate_logical_counts, m)?)?;
+    m.add_function(wrap_pyfunction!(_estimate_ecc_example, m)?)?;
 
     // classes
     m.add_class::<EstimatesPy>()?;
