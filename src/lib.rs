@@ -53,10 +53,16 @@ pub use code::RepetitionCode;
 pub use counter::LogicalCounts;
 pub use estimates::AliceAndBobEstimates;
 pub use factories::ToffoliBuilder;
+pub use ldpc_code::LdpcCode;
+pub use ldpc_estimates::LdpcEstimates;
+pub use ldpc_overhead::LdpcOverhead;
 pub use qubit::CatQubit;
 
 pub mod code;
 pub mod counter;
 pub mod estimates;
 pub mod factories;
+pub mod ldpc_code;
+pub mod ldpc_estimates;
+pub mod ldpc_overhead;
 pub mod qubit;

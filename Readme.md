@@ -3,7 +3,9 @@
 Q# resource estimator for Alice & Bob's architecture
 =====================================================
 
-This project contains the code for using [Microsoft Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator) (presented in [this paper](https://arxiv.org/abs/2311.05801)) for [Alice & Bob](https://alice-bob.com)'s architecture, using cat qubits and repetition code (LDPC codes might be added in the future).
+This project contains the code for using [Microsoft Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator) (presented in [this paper](https://arxiv.org/abs/2311.05801)) for [Alice & Bob](https://alice-bob.com)'s architecture, using cat qubits with either repetition code or LDPC code.
+
+The repetition code is described in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639). The LDPC code support is based on [arXiv:2401.09541](https://arxiv.org/abs/2401.09541), which achieves ~7.6 physical qubits per logical qubit (vs ~21 for repetition code) while maintaining comparable error rates. Use the `--code ldpc` flag to select the LDPC code.
 
 Shor's algorithm for solving the elliptic curve discrete logarithm problem is used as an example, as in the paper [Phys. Rev. Lett. 131, 040602](https://dx.doi.org/10.1103/PhysRevLett.131.040602) ([arXiv: 2302.06639](https://arxiv.org/abs/2302.06639)).
 Results from the resource estimator can be compared with the one of [the code coming with the paper](https://github.com/ElieGouzien/elliptic_log_cat).
