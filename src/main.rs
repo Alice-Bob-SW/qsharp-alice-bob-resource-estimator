@@ -2,18 +2,19 @@
 // Licensed under the Apache License.
 
 //! Command line interface to the resource estimator for cat-based quantum
-//! computer with repetition code. The command-line is self documented, please
-//! use it with subcommand `help` to learn its usage.
+//! computer with repetition code or LDPC code. The command-line is self
+//! documented, please use it with subcommand `help` to learn its usage.
 
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::rc::Rc;
 
 use qsharp_alice_bob_resource_estimator::{
-    AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder,
+    AliceAndBobEstimates, CatQubit, LdpcCode, LdpcEstimates, LdpcOverhead, LogicalCounts,
+    RepetitionCode, ToffoliBuilder,
 };
 use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
 
-/// Resource estimator for Alice & Bob's architecture (cats + repetition code).
+/// Resource estimator for Alice & Bob's architecture (cats + repetition/LDPC code).
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
@@ -21,11 +22,21 @@ struct Cli {
     #[arg(short, long)]
     frontier: bool,
 
+    /// Error correction code to use.
+    #[arg(long, value_enum, default_value_t = CodeChoice::Repetition)]
+    code: CodeChoice,
+
     #[command(flatten)]
     budget: Budget,
 
     #[command(subcommand)]
     command: Commands,
+}
+
+#[derive(Clone, ValueEnum)]
+enum CodeChoice {
+    Repetition,
+    Ldpc,
 }
 
 #[derive(Args)]
@@ -63,7 +74,6 @@ fn main() -> Result<(), anyhow::Error> {
     let args = Cli::parse();
 
     let qubit = CatQubit::new();
-    let qec = RepetitionCode::new();
     let builder = ToffoliBuilder::default();
     let budget = match (args.budget.error_total, args.budget.error_budget) {
         (Some(proba), None) => ErrorBudget::new(proba * 0.5, proba * 0.5, 0.0),
@@ -79,17 +89,49 @@ fn main() -> Result<(), anyhow::Error> {
         }
         Commands::Resources { qubits, cx, ccx } => LogicalCounts::new(qubits, cx, ccx),
     };
-    let estimation =
-        PhysicalResourceEstimation::new(qec, Rc::new(qubit), builder, Rc::new(count), budget);
 
-    if args.frontier {
-        let results = estimation.build_frontier()?;
-        for r in results {
-            println!("{}", AliceAndBobEstimates::from(r));
+    match args.code {
+        CodeChoice::Repetition => {
+            let qec = RepetitionCode::new();
+            let estimation = PhysicalResourceEstimation::new(
+                qec,
+                Rc::new(qubit),
+                builder,
+                Rc::new(count),
+                budget,
+            );
+
+            if args.frontier {
+                let results = estimation.build_frontier()?;
+                for r in results {
+                    println!("{}", AliceAndBobEstimates::from(r));
+                }
+            } else {
+                let result: AliceAndBobEstimates = estimation.estimate()?.into();
+                println!("{result}");
+            }
         }
-    } else {
-        let result: AliceAndBobEstimates = estimation.estimate()?.into();
-        println!("{result}");
+        CodeChoice::Ldpc => {
+            let qec = LdpcCode::new();
+            let overhead = LdpcOverhead::from(count);
+            let estimation = PhysicalResourceEstimation::new(
+                qec,
+                Rc::new(qubit),
+                builder,
+                Rc::new(overhead),
+                budget,
+            );
+
+            if args.frontier {
+                let results = estimation.build_frontier()?;
+                for r in results {
+                    println!("{}", LdpcEstimates::from(r));
+                }
+            } else {
+                let result: LdpcEstimates = estimation.estimate()?.into();
+                println!("{result}");
+            }
+        }
     }
 
     Ok(())

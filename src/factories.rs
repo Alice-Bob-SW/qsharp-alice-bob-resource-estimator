@@ -18,7 +18,11 @@ use num_traits::FromPrimitive;
 use resource_estimator::estimates::{self, FactoryBuilder};
 use std::{borrow::Cow, fmt::Display, rc::Rc};
 
-use crate::{code::CodeParameter, CatQubit, RepetitionCode};
+use crate::{
+    code::CodeParameter,
+    ldpc_code::{LdpcCode, LdpcCodeParameter},
+    CatQubit, RepetitionCode,
+};
 
 /// Struct containing parameters of Toffoli magic states factories based on
 /// fault-tolerant measurement of stabilizers of the Toffoli magic state.
@@ -151,8 +155,8 @@ impl Display for ToffoliFactory {
 
 /// Contains a bunch of factories, and knows how to choose the best one.
 pub struct ToffoliBuilder {
-    factories: Vec<ToffoliFactory>,
-    lowest_error_probability: f64,
+    pub(crate) factories: Vec<ToffoliFactory>,
+    pub(crate) lowest_error_probability: f64,
 }
 
 impl Default for ToffoliBuilder {
@@ -313,6 +317,95 @@ impl FactoryBuilder<RepetitionCode> for ToffoliBuilder {
     /// Number of types of magic states.
     fn num_magic_state_types(&self) -> usize {
         // Same implementation as the provided one.
+        1
+    }
+}
+
+/// Newtype wrapper around [`ToffoliFactory`] for use with LDPC codes.
+///
+/// The factories themselves use repetition code internally, but the wrapper
+/// adapts the `Factory` trait to use [`LdpcCodeParameter`] instead of
+/// [`CodeParameter`].
+#[derive(Clone, PartialEq, Eq)]
+pub struct LdpcToffoliFactory(ToffoliFactory);
+
+impl LdpcToffoliFactory {
+    /// Logical error probability of the magic state preparation.
+    #[must_use]
+    pub fn error_probability(&self) -> f64 {
+        self.0.error_probability()
+    }
+}
+
+impl estimates::Factory for LdpcToffoliFactory {
+    type Parameter = LdpcCodeParameter;
+
+    fn physical_qubits(&self) -> u64 {
+        estimates::Factory::physical_qubits(&self.0)
+    }
+
+    fn duration(&self) -> u64 {
+        self.0.duration()
+    }
+
+    fn num_output_states(&self) -> u64 {
+        self.0.num_output_states()
+    }
+
+    fn max_code_parameter(&self) -> Option<Cow<'_, Self::Parameter>> {
+        // Factory distance does not constrain LDPC code parameters
+        // (factories use repetition code internally)
+        None
+    }
+}
+
+impl Ord for LdpcToffoliFactory {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+impl PartialOrd for LdpcToffoliFactory {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Display for LdpcToffoliFactory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl FactoryBuilder<LdpcCode> for ToffoliBuilder {
+    type Factory = LdpcToffoliFactory;
+
+    fn find_factories(
+        &self,
+        _ftp: &LdpcCode,
+        _qubit: &Rc<CatQubit>,
+        _magic_state_type: usize,
+        output_error_rate: f64,
+        _max_code_parameter: &LdpcCodeParameter,
+    ) -> Option<Vec<Cow<'_, Self::Factory>>> {
+        assert!(
+            output_error_rate > self.lowest_error_probability,
+            "Requested error probability is too low"
+        );
+
+        let mut factories: Vec<_> = self
+            .factories
+            .iter()
+            .filter_map(|factory| {
+                (factory.error_probability <= output_error_rate)
+                    .then(|| Cow::Owned(LdpcToffoliFactory(factory.clone())))
+            })
+            .collect();
+        factories.sort_unstable();
+        Some(factories)
+    }
+
+    fn num_magic_state_types(&self) -> usize {
         1
     }
 }
