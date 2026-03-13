@@ -1,11 +1,11 @@
+from warnings import warn
 from typing import Optional, Tuple, Union
 from qualtran import Bloq  # type: ignore[import-untyped]
-from anb_estimator.bloq_to_logical_counts import count_resources
+from anb_estimator.qualtran_interface import count_resources
 
 from anb_estimator._native import (  # type: ignore[import-untyped]
     _estimate_qsharp_file,
     _estimate_logical_counts,
-    _estimate_ecc_example,
 )
 
 
@@ -14,6 +14,8 @@ from anb_estimator.dataclass_wrappers import Estimates, LogicalCounts  # type: i
 
 ErrorBudget = Tuple[float, float, float]
 
+
+# TODO: reactoring in progress, still work to do.
 
 def estimate_from_qualtran(
     bloq: Bloq,
@@ -91,10 +93,17 @@ def estimate_logical_counts(
     assert num_qbits >= 0, "num_qbits must be >= 0"
     assert num_cx >= 0, "num_cx must be >= 0"
     assert num_ccx >= 0, "num_ccx must be >= 0"
+    if num_qbits.is_integer():
+        num_qbits = int(num_qbits)
+    if num_cx.is_integer():
+        num_cx = int(num_cx)
+    if num_ccx.is_integer():
+        num_ccx = int(num_ccx)
 
     if error_total is None and error_budget is None:
-        print(
-            "No error budget provided. Falling back to default error budget (0.333 * 0.5, 0.333 * 0.5, 0.0).\n"
+        warn(
+            "No error budget provided. Falling back to default error budget "
+            "(0.333 * 0.5, 0.333 * 0.5, 0.0).\n"
         )
 
     if error_total is not None and error_budget is not None:
@@ -123,34 +132,6 @@ def estimate_logical_counts(
         return Estimates.from_rust(estimate)
 
 
-def estimate_ecc_example(
-    bit_size: int, window_size: int, frontier: bool
-) -> Union[Estimates, tuple[Estimates, list]]:  # type: ignore
-    """
-    Runs the estimation for the ECC example and returns the results as an EstimatesPy class.
-
-    Args:
-        bit_size (int): ECC modulus bit size.
-        window_size (int): Window size used by the example algorithm.
-        frontier (bool): If `true`, also return a list representing the Pareto frontier.
-
-    Returns:
-        Union[Estimates, tuple[Estimates, list]]: The estimation results as an Estimates dataclass or a tuple with the frontier.
-    """
-    assert bit_size > 0, "bit_size must be > 0"
-    assert window_size > 0, "window_size must be > 0"
-
-    estimate, frontier_data = _estimate_ecc_example(  # type: ignore
-        bit_size, window_size, frontier=frontier
-    )
-
-    if frontier:
-        frontier_converted = [Estimates.from_rust(e) for e in frontier_data]
-        return Estimates.from_rust(estimate), frontier_converted
-    else:
-        return Estimates.from_rust(estimate)
-
-
 def estimate_qsharp_file(
     file_path: str,
     frontier: bool,
@@ -170,19 +151,25 @@ def estimate_qsharp_file(
         Union[Estimates, tuple[Estimates, list]]: The estimation results as an Estimates dataclass or a tuple with the frontier.
     """
     # --- validate inputs ---
-    assert isinstance(file_path, str), "file_path must be a string"
-    assert file_path.endswith(".qs"), "file_path must point to a Q# file"
-    assert isinstance(frontier, bool), "frontier must be a boolean"
-    if error_total is not None:
-        assert error_total >= 0, "error_total must be >= 0"
+    if not isinstance(file_path, str):
+        raise ValueError("file_path must be a string")
+    if not file_path.endswith(".qs"):
+        raise ValueError("file_path must point to a Q# file")
+    if not isinstance(frontier, bool):
+        raise ValueError("frontier must be a boolean")
+    if error_total is not None and error_total < 0:
+        raise ValueError("error_total must be >= 0")
     if error_budget is not None:
-        assert len(error_budget) == 3, "error_budget must be a 3-tuple"
-        assert all(x >= 0 for x in error_budget), "error_budget entries must be >= 0"
+        if not len(error_budget) == 3:
+            raise ValueError("error_budget must be a 3-tuple")
+        if not all(x >= 0 for x in error_budget):
+            raise ValueError("error_budget entries must be >= 0")
     if error_total is not None and error_budget is not None:
         raise ValueError("Exactly one of error_total or error_budget must be set")
     if error_total is None and error_budget is None:
-        print(
-            "No error budget provided. Falling back to default error budget (0.333 * 0.5, 0.333 * 0.5, 0.0)."
+        warn(
+            "No error budget provided. Falling back to default error budget "
+            "(0.333 * 0.5, 0.333 * 0.5, 0.0)."
         )
 
     if frontier:

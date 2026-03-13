@@ -16,7 +16,8 @@ def count_resources(
     bloq: Bloq,
     graph_generalizer: Tuple[Any, ...] = default_generalizer,  # type: ignore
 ):
-    """Counts the number of qubits, cx and ccx required for a given qualtran Bloq.
+    """Count the number of qubits, cx and ccx required for a given qualtran Bloq.
+
     -We count classicaly controlled CNOT as half a CNOT (approximation that we need
     them half of the time)
     -TwoBitCSwap are not native to A&B architectures
@@ -39,7 +40,6 @@ def count_resources(
     num_ccx : int
         number of ccx needed for the Bloq
     """
-
     num_qubits = get_cost_value(bloq, QubitCount())
 
     _, sigma = bloq.call_graph(graph_generalizer)

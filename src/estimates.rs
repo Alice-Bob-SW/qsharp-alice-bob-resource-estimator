@@ -6,7 +6,9 @@
 use std::{fmt::Display, ops::Deref};
 
 use num_traits::{FromPrimitive, ToPrimitive};
-use resource_estimator::estimates::{FactoryPart, Overhead, PhysicalResourceEstimationResult};
+use resource_estimator::estimates::{
+    ErrorBudget, FactoryPart, Overhead, PhysicalResourceEstimationResult,
+};
 
 use crate::{code::RepetitionCode, counter::LogicalCounts, factories::ToffoliFactory};
 
@@ -218,5 +220,36 @@ impl Display for AliceAndBobEstimates {
         )?;
         writeln!(f, "factory fraction:    {:.2}%", self.factory_fraction())?;
         writeln!(f, "─────────────────────────────")
+    }
+}
+
+/// Builds an [`ErrorBudget`] from either a total error target or a per-component budget.
+///
+/// # Arguments
+/// - `error_total` — If `Some(p)`, split the total error `p` into equal
+///   topological and magic error components `(0.5p, 0.5p)` with rotations error set to `0.0`.
+/// - `error_budget` — If `Some((logical_error, magic_state_error, rotation_error))`, use these
+///    explicit per-component values.
+///
+/// # Returns
+/// An [`ErrorBudget`] or an error.
+///
+/// # Notes
+/// - If both `error_total` and `error_budget` are `None`, a default split of
+///   `(0.333*0.5, 0.333*0.5, 0.0)` is used (conservative placeholder).
+/// - Supplying both `Some` variants returns an error.
+pub fn make_budget(
+    error_total: Option<f64>,
+    error_budget: Option<(f64, f64, f64)>,
+) -> Result<ErrorBudget, &'static str> {
+    match (error_total, error_budget) {
+        (Some(p), None) => Ok(ErrorBudget::new(p * 0.5, p * 0.5, 0.0)),
+        (None, Some((logical_error, magic_state_error, rotation_error))) => Ok(ErrorBudget::new(
+            logical_error,
+            magic_state_error,
+            rotation_error,
+        )),
+        (None, None) => Ok(ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0)),
+        (Some(_), Some(_)) => Err("Provide either error_total or error_budget, not both."),
     }
 }

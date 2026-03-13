@@ -8,10 +8,11 @@
 use clap::{Args, Parser, Subcommand};
 use std::rc::Rc;
 
+use qsharp_alice_bob_resource_estimator::estimates::make_budget;
 use qsharp_alice_bob_resource_estimator::{
     AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder,
 };
-use resource_estimator::estimates::{ErrorBudget, PhysicalResourceEstimation};
+use resource_estimator::estimates::PhysicalResourceEstimation;
 
 /// Resource estimator for Alice & Bob's architecture (cats + repetition code).
 #[derive(Parser)]
@@ -65,13 +66,11 @@ fn main() -> Result<(), anyhow::Error> {
     let qubit = CatQubit::new();
     let qec = RepetitionCode::new();
     let builder = ToffoliBuilder::default();
-    let budget = match (args.budget.error_total, args.budget.error_budget) {
-        (Some(proba), None) => ErrorBudget::new(proba * 0.5, proba * 0.5, 0.0),
-        (None, Some(vec)) => ErrorBudget::new(vec[0], vec[1], vec[2]),
-        // TODO: give default handling to clap.
-        (None, None) => ErrorBudget::new(0.333 * 0.5, 0.333 * 0.5, 0.0),
-        _ => unreachable!("Clap should have caught that!"),
-    };
+    let budget = make_budget(
+        args.budget.error_total,
+        args.budget.error_budget.map(|vec| (vec[0], vec[1], vec[2])),
+    )
+    .expect("Clap should have caught that!");
 
     let count = match args.command {
         Commands::File { filename } => {

@@ -2,18 +2,19 @@
 
 # Q# Resource Estimator for Alice & Bob's Architecture
 
-TL;DR Provide algorithmic resource counts from Q#, Qualtran, or explicit `(qubits, cx, ccx)` and get physical resource estimates for Alice & Bob's cat-qubit + repetition-code architecture.
+TL;DR Provide algorithmic resource counts from Q#, Qualtran, or explicit `(qubits, cx, ccx)` and get physical resource estimates for Alice & Bob's cat qubit + repetition code architecture.
 
-This repository adapts the Microsoft Azure Resource Estimator to Alice & Bob's architecture. It estimates physical resources from Q# or Qualtran programs or explicit algorithmic counts and exposes a Python API for analysis workflows.
+This repository relies on the Microsoft Azure Resource Estimator for Alice & Bob's architecture, using it as a rust library.
+It estimates physical resources from Q# or Qualtran programs or explicit algorithmic counts and exposes a Rust library, a command-line interface and a Python API for analysis workflows.
 
-The implementation follows the Azure Resource Estimator described in [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) and the Alice & Bob architecture assumptions detailed in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639). An elliptic-curve discrete logarithm example (from [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)) is included, along with Qualtran-based tooling for deriving logical resources.
+The implementation follows the Azure Resource Estimator described in [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) and the Alice & Bob architecture assumptions detailed in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639).
+An elliptic-curve discrete logarithm example (from [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)) is included, along with Qualtran-based tooling for deriving logical resources.
 
 ## Highlights
-- Q# -> algorithmic resource counts -> physical resource estimates
-- Direct ISA-level entry with `(qubits, cx, ccx)` algorithmic resource counts
-- Seamless Qualtran interface and Shor/ECC-style example
-- Cat-qubit + repetition-code architecture parameters baked into the estimator
-- Python bindings for integration in notebooks and analysis workflows
+- Input algorithm description from Q#, Qualtran or `(qubits, cx, ccx)` + target total error rates.
+- Cat qubit + repetition code architecture.
+- Code parameters (distance and average number of photons) and magic state factory choice optimized.
+- Rust library, command-line interface and Python bindings.
 
 ## Inputs and Model
 The estimator consumes logical-level resources:
@@ -21,8 +22,8 @@ The estimator consumes logical-level resources:
 - `D_L`: logical depth (cycles)
 - `N_T`: magic-state demand (Toffoli/CCX count)
 
-These are calculated internally from the algorithmic resource counts `(qubits, cx, ccx)` by adding routing qubits, factory qubits and calculating logical cyles following the explanation given in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639). You can provide `(qubits, cx, ccx)` in three ways:
-
+These are calculated internally from the algorithmic resource counts `(qubits, cx, ccx)` by adding routing qubits, factory qubits and calculating logical cyles following the explanation given in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639).
+You can provide `(qubits, cx, ccx)` in three ways:
 1. **Qualtran Bloq**: Qualtran calculates `(qubits, cx, ccx)`
 2. **Q# program**: the interpreter extracts `(qubits, cx, ccx)`
 3. **Explicit resources**: you pass `(qubits, cx, ccx)` directly
@@ -48,14 +49,21 @@ pixi install
 pixi run python --version
 ```
 
+## Installation
+TODO: to review
+This repository includes a pixi.toml file to enable reproducible environments.
+
+To install the required environment and the Python extension, run the following commands:
+
+To run the setup commands, you’ll need Pixi installed on your machine. This can be easily done by following the installation guide here. Pixi will create and manage the project environment for you, including installing Python, Rust, and any required dependencies defined in the project configuration. In addition, you’ll need a working native build toolchain for your operating system (Xcode Command Line Tools on macOS, build-essential on Linux, or Microsoft C++ Build Tools on Windows), since maturin develop compiles Rust extensions locally.
+
 ## Python Usage
 See `getting_started.ipynb` for an end-to-end walkthrough.
 
-The python package is named `anb_estimator`. The API exposes four main functions:
+The python package is named `anb_estimator`. The API exposes three main functions:
 - `estimate_qsharp_file(...)`
 - `estimate_from_qualtran(...)`
 - `estimate_logical_counts(...)`
-- `estimate_ecc_example(...)`
 
 The additional arguments are
 - `frontier` — If `true`, compute and return the Pareto frontier as structured objects.
@@ -121,29 +129,17 @@ estimate, frontier = anb_estimator.estimate_logical_counts(
 )
 ```
 
-### Example: elliptic-curve discrete log estimates.
-```python
-import anb_estimator
-
-estimate, frontier = anb_estimator.estimate_ecc_example(
-    bit_size=256,
-    window_size=18,
-    frontier=True,
-)
-```
-
 ## Assumptions
 This estimator applies the logical-to-physical mapping described in:
 - [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) for the base Q# Resource Estimator model
-- [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) for Alice & Bob cat-qubit architecture parameters
+- [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) for Alice & Bob cat qubit architecture parameters
 
 ## Authors
+- Mathias Soeken (initial version of the repository)
 - Élie Gouzien
 - Nicholas Gialouris
 - Axel Pappalardo
 
 ## Acknowledgements
-Thanks to Mathias Soeken for the initial repository and for rebuilding the Q# resource estimator to support Alice & Bob's architecture.
+Thanks to Mathias Soeken for the initial repository and for rebuilding the Q# resource estimator to support any architecture, including Alice & Bob's one.
 
-## Contact
-For questions not addressed here, please contact Élie Gouzien [elie.gouzien@alice-bob.com]
