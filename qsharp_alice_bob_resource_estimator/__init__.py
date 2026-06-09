@@ -1,10 +1,10 @@
-from anb_estimator.function_wrappers import (
+from qsharp_alice_bob_resource_estimator.function_wrappers import (
     estimate_from_qualtran,
     estimate_qsharp_file,
     estimate_logical_counts,
 )  # type: ignore[import-untyped]
 
-from anb_estimator.dataclass_wrappers import LogicalCounts, ErrorBudget, FullResults
+from qsharp_alice_bob_resource_estimator.dataclass_wrappers import LogicalCounts, ErrorBudget, FullResults
 
 __all__ = [
     "estimate_qsharp_file",

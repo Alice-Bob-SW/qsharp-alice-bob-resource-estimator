@@ -3,7 +3,7 @@ requires = ["maturin>=1.8,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "anb-estimator"
+name = "qsharp_alice_bob_resource_estimator"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
@@ -13,7 +13,7 @@ classifiers = [
 dynamic = ["version"]
 [tool.maturin]
 features = ["python"]
-module-name = "anb_estimator._native"
+module-name = "qsharp_alice_bob_resource_estimator._native"
 
 [tool.mypy]
 strict = true

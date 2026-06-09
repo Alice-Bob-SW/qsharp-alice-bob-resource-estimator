@@ -45,8 +45,8 @@ jobs:
       - name: Save executable
         uses: actions/upload-artifact@v4
         with:
-          name: ${{matrix.os}}-qsharp-alice-bob-resource-estimator
-          path: target/release/qsharp-alice-bob-resource-estimator${{ runner.os == 'Windows' && '.exe' || ''}}
+          name: ${{matrix.os}}-qsharp_alice_bob_resource_estimator_cli
+          path: target/release/qsharp_alice_bob_resource_estimator_cli${{ runner.os == 'Windows' && '.exe' || ''}}
       - name: test
         run: cargo test
       - name: example elliptic_log
@@ -82,8 +82,8 @@ jobs:
       - name: Build and install the native extension (maturin develop)
         run: pixi run -e dev maturin develop
       - name: Ruff lint
-        run: pixi run -e dev ruff check anb_estimator
+        run: pixi run -e dev ruff check qsharp_alice_bob_resource_estimator
       - name: Ruff format check
-        run: pixi run -e dev ruff format --check anb_estimator
+        run: pixi run -e dev ruff format --check qsharp_alice_bob_resource_estimator
       - name: Import smoke test
-        run: pixi run -e dev python -c "import anb_estimator; from anb_estimator import estimate_logical_counts, LogicalCounts; print('anb_estimator import OK')"
+        run: pixi run -e dev python -c "import qsharp_alice_bob_resource_estimator; from qsharp_alice_bob_resource_estimator import estimate_logical_counts, LogicalCounts; print('qsharp_alice_bob_resource_estimator import OK')"

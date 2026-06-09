@@ -94,17 +94,14 @@ Use the subcommand `help` to have the documentation of the executable.
 
 
 Basic shape:
-`anb_estimator [OPTIONS] <COMMAND>`
-
-If running through Cargo:
 `cargo run -- [OPTIONS] <COMMAND>`
 
 Commands:
 - resources - 
-Usage: `anb_estimator  resources <qubits> <cx> <ccx>`
+Usage: `cargo  resources <qubits> <cx> <ccx>`
 Directly passes logical resource cost.
 - file -
-Usage: `anb_estimator  file <path-to-qsharp-file>`
+Usage: `cargo  file <path-to-qsharp-file>`
 Reads a Q# file.
 
 Global options (must appear before the command):

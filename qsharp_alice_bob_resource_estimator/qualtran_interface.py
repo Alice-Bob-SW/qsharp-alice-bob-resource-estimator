@@ -11,7 +11,7 @@ from qualtran.resource_counting.generalizers import (  # type: ignore[import-unt
 )
 from sympy import Expr
 
-from anb_estimator.dataclass_wrappers import LogicalCounts  # type: ignore[import-untyped]
+from qsharp_alice_bob_resource_estimator.dataclass_wrappers import LogicalCounts  # type: ignore[import-untyped]
 
 default_generalizer = (ignore_alloc_free, ignore_split_join, generalize_cvs)
 

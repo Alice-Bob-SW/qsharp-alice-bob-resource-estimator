@@ -2,15 +2,15 @@ from math import floor
 from warnings import warn
 from typing import Optional
 from qualtran import Bloq  # type: ignore[import-untyped]
-from anb_estimator.qualtran_interface import count_resources
+from qsharp_alice_bob_resource_estimator.qualtran_interface import count_resources
 
-from anb_estimator._native import (  # type: ignore[import-untyped]
+from qsharp_alice_bob_resource_estimator._native import (  # type: ignore[import-untyped]
     _estimate_qsharp_file,
     _estimate_logical_counts,
 )
 
 
-from anb_estimator.dataclass_wrappers import Estimates, ErrorBudget, FullResults, LogicalCounts  # type: ignore[import-untyped]
+from qsharp_alice_bob_resource_estimator.dataclass_wrappers import Estimates, ErrorBudget, FullResults, LogicalCounts  # type: ignore[import-untyped]
 
 
 def _check_error_inputs(error_total: Optional[float], error_budget: Optional[ErrorBudget]) -> None:

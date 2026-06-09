@@ -1,5 +1,5 @@
 [package]
-name = "anb-estimator"
+name = "qsharp_alice_bob_resource_estimator"
 version = "0.2.0"
 edition = "2021"
 description = "A resource estimator for running quantum algorithms on Alice and Bob's hardware."
@@ -13,7 +13,7 @@ name = "qsharp_alice_bob_resource_estimator"
 crate-type = ["rlib", "cdylib"]
 
 [[bin]]
-name = "anb-estimator"
+name = "qsharp_alice_bob_resource_estimator_cli"
 path = "src/main.rs"
 required-features = ["cli"]
 

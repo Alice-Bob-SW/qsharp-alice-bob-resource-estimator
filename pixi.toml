@@ -10,7 +10,7 @@ dev = ["dev"]
 [dependencies]
 graphviz = ">=13.1.2,<14"
 python = "<3.14"
-maturin = ">=1.11.5,<2"
+maturin = ">=1.13.3,<2"
 uv = ">=0.10.2,<0.11"
 numba = ">=0.63.1"
 

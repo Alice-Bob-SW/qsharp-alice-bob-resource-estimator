@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 
-from anb_estimator._native import LogicalCountsPy, EstimatesPy  # type: ignore[import-untyped]
+from qsharp_alice_bob_resource_estimator._native import LogicalCountsPy, EstimatesPy  # type: ignore[import-untyped]
 
 
 
