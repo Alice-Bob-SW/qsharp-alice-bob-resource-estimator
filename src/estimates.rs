@@ -232,7 +232,8 @@ impl Display for AliceAndBobEstimates {
 ///    explicit per-component values.
 ///
 /// # Returns
-/// An [`ErrorBudget`] or an error.
+/// An [`ErrorBudget`] containing the Proba of >= 1 logical error, the proba of >= 1 faulty magic state distillation,
+///     and the proba of >= 1 failed rotation synthesis), or an error.
 ///
 /// # Notes
 /// - If both `error_total` and `error_budget` are `None`, a default split of

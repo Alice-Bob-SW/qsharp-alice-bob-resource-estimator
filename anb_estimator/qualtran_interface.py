@@ -1,3 +1,4 @@
+from math import floor
 from typing import Any, Tuple
 
 # Import Qualtran tools
@@ -7,22 +8,33 @@ from qualtran.resource_counting.generalizers import (  # type: ignore[import-unt
     ignore_split_join,
     ignore_alloc_free,
     generalize_cvs,
-)  # type: ignore[import-untyped]
+)
+from sympy import Expr
+
+from anb_estimator.dataclass_wrappers import LogicalCounts  # type: ignore[import-untyped]
 
 default_generalizer = (ignore_alloc_free, ignore_split_join, generalize_cvs)
+
+
+def _as_exact_int(value: Any, name: str) -> int:
+    if isinstance(value, Expr):
+        if value.free_symbols or getattr(value, "is_integer", None) is not True:
+            raise ValueError(f"{name} must be a concrete integer, got {value!r}")
+        return int(value)
+
+    return int(value)
 
 
 def count_resources(
     bloq: Bloq,
     graph_generalizer: Tuple[Any, ...] = default_generalizer,  # type: ignore
-):
+) -> LogicalCounts:
     """Count the number of qubits, cx and ccx required for a given qualtran Bloq.
 
-    -We count classicaly controlled CNOT as half a CNOT (approximation that we need
-    them half of the time)
+    -We count classically controlled CNOT as half a CNOT 
     -TwoBitCSwap are not native to A&B architectures
         and are decomposed in 2 CNOT + 1 Toffoli
-    -And gate are counted as half a Toffoli (they require half as many T states),
+    -And gates are counted as half a Toffoli (they require half as many T states),
         And.adjoint() are not counted
     -Single qubit gates are not counted
 
@@ -40,7 +52,8 @@ def count_resources(
     num_ccx : int
         number of ccx needed for the Bloq
     """
-    num_qubits = get_cost_value(bloq, QubitCount())
+    num_qubits = _as_exact_int(get_cost_value(bloq, QubitCount()), "Bloq qubit count")
+    
 
     _, sigma = bloq.call_graph(graph_generalizer)
     L_k = [k for k in sigma.keys()]
@@ -48,17 +61,22 @@ def count_resources(
 
     num_cx = 0
     num_ccx = 0
-    if "CNOT" in dict_sigma.keys():
+    if "CNOT" in dict_sigma:
         num_cx += dict_sigma["CNOT"]  # type: ignore
-    if "TwoBitCSwap" in dict_sigma.keys():  # needs to be decomposed on A&B architecture
+    if "TwoBitCSwap" in dict_sigma:  # needs to be decomposed on A&B architecture
         num_cx += 2 * dict_sigma["TwoBitCSwap"]  # type: ignore
         num_ccx += dict_sigma["TwoBitCSwap"]  # type: ignore
-    if "C[CNOT]" in dict_sigma.keys():
+    if "C[CNOT]" in dict_sigma:
         num_cx += 0.5 * dict_sigma["C[CNOT]"]  # type: ignore
 
-    if "Toffoli" in dict_sigma.keys():  # needs to be decomposed on A&B architecture
+    if "Toffoli" in dict_sigma:  # needs to be decomposed on A&B architecture
         num_ccx += dict_sigma["Toffoli"]  # type: ignore
-    if "And" in dict_sigma.keys():  # we count And as 0.5*Toffoli
+    if "And" in dict_sigma:  # 
         num_ccx += dict_sigma["And"]  # type: ignore
+    # And.adjoint() are not counted, so the pair of Ands counts as 1 Toffoli 
 
-    return num_qubits, int(num_cx), int(num_ccx)
+    return LogicalCounts(
+        qubit_count=num_qubits,
+        cx_count=floor(num_cx),
+        ccx_count=floor(num_ccx)
+    )

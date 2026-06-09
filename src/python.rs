@@ -49,8 +49,8 @@ impl From<&LogicalCounts> for LogicalCountsPy {
 /// # Arguments
 /// - `filename` — Path to a Q# source file to be parsed and interpreted for counts.
 /// - `frontier` — If `true`, also compute a frontier of estimates (e.g., different distances/α).
-/// - `error_total` — Overall error target `p_total`; mutually exclusive with `error_budget`.
-/// - `error_budget` — Tuple `(logical, magic_state, rotation)` if an explicit split is desired.
+/// - `error_total` — argument of make_budget ; mutually exclusive with `error_budget`.
+/// - `error_budget` — argument of make_budget ; mutually exclusive with `error_total`.
 ///
 /// # Returns
 /// A 3-tuple:
@@ -124,9 +124,8 @@ fn _estimate_qsharp_file(
 /// - `cx` — Logical CX-equivalent two-qubit gate count.
 /// - `ccx` — Logical CCX (Toffoli) gate count.
 /// - `frontier` — If `true`, compute and return the frontier as structured objects.
-/// - `error_total` — Overall error target; mutually exclusive with `error_budget`.
-/// - `error_budget` — Tuple `(topological error budget, magic state error budget,
-///    rotation error budget)` for an explicit split.
+/// - `error_total` — argument of make_budget ; mutually exclusive with `error_budget`.
+/// - `error_budget` — argument of make_budget ; mutually exclusive with `error_total`.
 ///
 /// # Returns
 /// A tuple:

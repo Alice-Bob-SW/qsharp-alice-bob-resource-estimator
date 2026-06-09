@@ -1,5 +1,6 @@
+from math import floor
 from warnings import warn
-from typing import Optional, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 from qualtran import Bloq  # type: ignore[import-untyped]
 from anb_estimator.qualtran_interface import count_resources
 
@@ -9,20 +10,113 @@ from anb_estimator._native import (  # type: ignore[import-untyped]
 )
 
 
-from anb_estimator.dataclass_wrappers import Estimates, LogicalCounts  # type: ignore[import-untyped]
+from anb_estimator.dataclass_wrappers import Estimates, FullResults, LogicalCounts  # type: ignore[import-untyped]
 
 
-ErrorBudget = Tuple[float, float, float]
 
 
-# TODO: reactoring in progress, still work to do.
+ErrorBudget = Tuple[float, float, float] # `(Proba of >= 1 logical error, Proba of >= 1 faulty magic state distillation, Proba of >= 1 failed rotation synthesis)`
+
+
+def _check_error_inputs(error_total: Optional[float], error_budget: Optional[ErrorBudget]) -> Tuple[Optional[float], Optional[ErrorBudget]]:
+    """
+    Validates the error inputs and ensures that exactly one of `error_total` or `error_budget` is set, and that they are non-negative.
+    """
+    if error_total is None and error_budget is None:
+        warn(
+            "No error budget provided. Falling back to default error budget "
+            "(0.333 * 0.5, 0.333 * 0.5, 0.0).\n"
+        )
+    elif error_total is not None and error_budget is not None:
+        raise ValueError("Exactly one of error_total or error_budget must be set")
+    elif error_total is not None and not 0 <= error_total <= 1:
+        raise ValueError("error_total must be between 0 and 1")
+    elif error_budget is not None:
+        if not len(error_budget) == 3:
+            raise ValueError("error_budget must be a 3-tuple (Proba of >= 1 logical error, Proba of >= 1 faulty magic state distillation, Proba of >= 1 failed rotation synthesis)")
+        if not all(0 <= x <= 1 for x in error_budget):
+            raise ValueError("error_budget entries must be between 0 and 1")
+    return error_total, error_budget
+
+
+def _warn_if_arbitrary_circuit():
+    warn("You should have a look at the Readme.md for assumptions on the costs of physical gates.")
+
+
+
+def _format_logical_counts_input(logical_counts: LogicalCounts) -> LogicalCounts:
+    """
+    Make sure that the logical counts are valid (non-negative integers) and convert them to integers if they are given as floats representing integers (e.g., 3.0).
+    """
+    def _to_uint(k: str, val: float) -> int:
+        if val < 0:
+            raise ValueError(f"{k} must be >= 0")
+        if val != floor(val):
+            raise ValueError(f"{k} must be an integer or a float representing an integer (e.g., 3.0)")
+        return int(floor(val))
+    
+    result = LogicalCounts(**{k: _to_uint(k, v) for k, v in logical_counts.to_dict().items()})
+    
+    if logical_counts.qubit_count == 0:
+        raise ValueError("The number of qubits must be > 0")
+    if logical_counts.ccx_count == 0:
+        raise ValueError("The number of CCX gates must be > 0")  # Rust panics if the number of factories is 0.
+    return result
+
+
+def estimate_logical_counts(
+    logical_counts: LogicalCounts,
+    frontier: bool,
+    error_total: Optional[float] = None,
+    error_budget: Optional[ErrorBudget] = None,
+) -> FullResults: 
+    """
+    Runs the estimation based on logical counts and returns the results as an Estimates class.
+
+    Args:
+        logical_counts (LogicalCounts): Logical counts of the circuit consisting of::
+            qubit_count (int): Logical (algorithm) qubit count.
+            cx_count (int): Logical CX-equivalent two-qubit gate count.
+            ccx_count (int): Logical CCX (Toffoli) gate count.
+        frontier (bool): If `true`, also return a list representing the frontier.
+        error_total (float): Overall error target; mutually exclusive with `error_budget`.
+        error_budget (Tuple): Tuple `(Proba of >= 1 logical error, Proba of >= 1 faulty magic state distillation,
+                                Proba of >= 1 failed rotation synthesis)` for an explicit split; mutually exclusive with "error_total".
+
+    Returns:
+        FullResults: The estimation results as an FullResults dataclass.
+    """
+    # --- validate inputs ---
+    _safe_counts = _format_logical_counts_input(logical_counts)
+
+
+    if not isinstance(frontier, bool):
+        raise ValueError("frontier must be a boolean")
+
+    
+    safe_error_total, safe_error_budget = _check_error_inputs(error_total, error_budget)
+
+    estimate, frontier_data = _estimate_logical_counts(  
+        _safe_counts.qubit_count,
+        _safe_counts.cx_count,
+        _safe_counts.ccx_count,
+        frontier=frontier,
+        error_total=safe_error_total,
+        error_budget=safe_error_budget,
+    )
+
+    frontier_converted = [Estimates.from_rust(e) for e in frontier_data] if frontier else None
+
+    return FullResults(Estimates.from_rust(estimate), frontier_converted, _safe_counts)
+
+
 
 def estimate_from_qualtran(
     bloq: Bloq,
     frontier: bool,
     error_total: Optional[float] = None,
     error_budget: Optional[ErrorBudget] = None,
-) -> Union[Estimates, tuple[Estimates, list]]:  # type: ignore
+) -> FullResults: 
     """
     Runs the Qualtran estimation and returns the results as an EstimatesPy class.
 
@@ -30,106 +124,32 @@ def estimate_from_qualtran(
         bloq (Bloq): The Bloq to be estimated.
         frontier (bool): If `true`, also return a list representing the frontier.
         error_total (float): Overall error target; mutually exclusive with `error_budget`.
-        error_budget (Tuple): Tuple `(target, meas, routing)` for an explicit split.
+        error_budget (Tuple): Tuple `(Proba of >= 1 logical error, Proba of >= 1 faulty magic state distillation,
+                                Proba of >= 1 failed rotation synthesis)` for an explicit split; mutually exclusive with "error_total".
 
     Returns:
-        Union[Estimates, tuple[Estimates, list]]: The estimation results as an Estimates dataclass or a tuple with the frontier.
+        FullResults: The estimation results as an FullResults dataclass.
     """
     # --- validate bloq ---
-    assert isinstance(bloq, Bloq), "bloq must be a qualtran Bloq"
+    if not isinstance(bloq, Bloq):
+        raise TypeError("bloq must be a qualtran Bloq")
 
     # Try resource counting early to ensure the bloq is well-formed
     try:
-        num_qbits, num_cx, num_ccx = count_resources(bloq)
+        logical_count = count_resources(bloq)
     except Exception as exc:
         raise AssertionError("bloq is not a valid qualtran Bloq") from exc
 
-    if frontier:
-        estimate, frontier_data = _estimate_logical_counts(  # type: ignore
-            num_qbits,  # type: ignore
-            num_cx,
-            num_ccx,
-            frontier=frontier,
-            error_total=error_total,
-            error_budget=error_budget,
-        )
-        frontier_converted = [Estimates.from_rust(e) for e in frontier_data]
-        return Estimates.from_rust(estimate), frontier_converted
-    else:
-        estimate, _frontier_data = _estimate_logical_counts(  # type: ignore
-            num_qbits,  # type: ignore
-            num_cx,
-            num_ccx,
-            frontier=frontier,
-            error_total=error_total,
-            error_budget=error_budget,
-        )
-        return Estimates.from_rust(estimate)
+    _warn_if_arbitrary_circuit()
 
-
-def estimate_logical_counts(
-    num_qbits: int,
-    num_cx: int,
-    num_ccx: int,
-    frontier: bool,
-    error_total: Optional[float] = None,
-    error_budget: Optional[ErrorBudget] = None,
-) -> Union[Estimates, tuple[Estimates, list]]:  # type: ignore
-    """
-    Runs the estimation and returns the results as an Estimates class.
-
-    Args:
-        num_qbits (int): Logical (algorithm) qubit count.
-        num_cx (int): Logical CX-equivalent two-qubit gate count.
-        num_ccx (int): Logical CCX (Toffoli) gate count.
-        frontier (bool): If `true`, also return a list representing the frontier.
-        error_total (float): Overall error target; mutually exclusive with `error_budget`.
-        error_budget (Tuple): Tuple `(topological error budget, magic state error budget, rotation error budget)` if an explicit split is desired.
-
-    Returns:
-        Union[Estimates, tuple[Estimates, list]]: The estimation results as an Estimates dataclass or a tuple with the frontier.
-    """
-    # --- validate inputs ---
-    assert num_qbits >= 0, "num_qbits must be >= 0"
-    assert num_cx >= 0, "num_cx must be >= 0"
-    assert num_ccx >= 0, "num_ccx must be >= 0"
-    if num_qbits.is_integer():
-        num_qbits = int(num_qbits)
-    if num_cx.is_integer():
-        num_cx = int(num_cx)
-    if num_ccx.is_integer():
-        num_ccx = int(num_ccx)
-
-    if error_total is None and error_budget is None:
-        warn(
-            "No error budget provided. Falling back to default error budget "
-            "(0.333 * 0.5, 0.333 * 0.5, 0.0).\n"
-        )
-
-    if error_total is not None and error_budget is not None:
-        raise ValueError("Exactly one of error_total or error_budget must be set")
-
-    if error_total is not None:
-        assert error_total >= 0, "error_total must be >= 0"
-
-    if error_budget is not None:
-        assert len(error_budget) == 3, "error_budget must be a 3-tuple"
-        assert all(x >= 0 for x in error_budget), "error_budget entries must be >= 0"
-
-    estimate, frontier_data = _estimate_logical_counts(  # type: ignore
-        num_qbits,
-        num_cx,
-        num_ccx,
+    
+    return estimate_logical_counts(
+        logical_count,
         frontier=frontier,
         error_total=error_total,
         error_budget=error_budget,
     )
 
-    if frontier:
-        frontier_converted = [Estimates.from_rust(e) for e in frontier_data]
-        return Estimates.from_rust(estimate), frontier_converted
-    else:
-        return Estimates.from_rust(estimate)
 
 
 def estimate_qsharp_file(
@@ -137,51 +157,39 @@ def estimate_qsharp_file(
     frontier: bool,
     error_total: Optional[float] = None,
     error_budget: Optional[ErrorBudget] = None,
-) -> Union[tuple[Estimates, LogicalCounts], tuple[Estimates, list[Estimates], LogicalCounts]]:  # type: ignore
+) -> FullResults:  
     """
     Runs the estimation for a Q# file and returns the results as a dataclass.
 
     Args:
         file_path (str): The path to the Q# file to be estimated.
         frontier (bool): If `true`, also compute a frontier of estimates (e.g., different distances/α).
-        error_total (float): Overall error target `p_total`; mutually exclusive with `error_budget`.
-        error_budget (Tuple): Tuple `(topological error budget, magic state error budget, rotation error budget)` if an explicit split is desired.
+        error_total (float): Overall error target; mutually exclusive with `error_budget`.
+        error_budget (Tuple): Tuple `(Proba of >= 1 logical error, Proba of >= 1 faulty magic state distillation,
+                                Proba of >= 1 failed rotation synthesis)` for an explicit split; mutually exclusive with "error_total".
 
     Returns:
-        Union[Estimates, tuple[Estimates, list]]: The estimation results as an Estimates dataclass or a tuple with the frontier.
+        FullResults: The estimation results as an FullResults dataclass.
     """
     # --- validate inputs ---
     if not isinstance(file_path, str):
         raise ValueError("file_path must be a string")
     if not file_path.endswith(".qs"):
-        raise ValueError("file_path must point to a Q# file")
+        raise ValueError("file_path must point to a Q# .qs file")
+    
     if not isinstance(frontier, bool):
         raise ValueError("frontier must be a boolean")
-    if error_total is not None and error_total < 0:
-        raise ValueError("error_total must be >= 0")
-    if error_budget is not None:
-        if not len(error_budget) == 3:
-            raise ValueError("error_budget must be a 3-tuple")
-        if not all(x >= 0 for x in error_budget):
-            raise ValueError("error_budget entries must be >= 0")
-    if error_total is not None and error_budget is not None:
-        raise ValueError("Exactly one of error_total or error_budget must be set")
-    if error_total is None and error_budget is None:
-        warn(
-            "No error budget provided. Falling back to default error budget "
-            "(0.333 * 0.5, 0.333 * 0.5, 0.0)."
-        )
+    
+    _warn_if_arbitrary_circuit()
 
-    if frontier:
-        estimate, frontier_data, counts = _estimate_qsharp_file(  # type: ignore
-            file_path, frontier=frontier, error_total=error_total, error_budget=error_budget
-        )
-        frontier_converted = [Estimates.from_rust(e) for e in frontier_data]
-        counts_converted = LogicalCounts.from_rust(counts)
-        return Estimates.from_rust(estimate), frontier_converted, counts_converted
-    else:
-        estimate, frontier, counts = _estimate_qsharp_file(  # type: ignore
-            file_path, frontier=frontier, error_total=error_total, error_budget=error_budget
-        )
-        counts_converted = LogicalCounts.from_rust(counts)
-        return Estimates.from_rust(estimate), counts_converted
+    safe_error_total, safe_error_budget = _check_error_inputs(error_total, error_budget)
+    
+    estimate, frontier_data, counts = _estimate_qsharp_file( 
+        file_path, frontier=frontier, error_total=safe_error_total, error_budget=safe_error_budget
+    )
+    counts_converted = LogicalCounts.from_rust(counts)
+    
+    frontier_converted = [Estimates.from_rust(e) for e in frontier_data] if frontier else None
+
+    return FullResults(Estimates.from_rust(estimate), frontier_converted, counts_converted)
+

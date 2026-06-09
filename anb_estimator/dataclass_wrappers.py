@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from anb_estimator._native import LogicalCountsPy, EstimatesPy  # type: ignore[import-untyped]
 
 
+
 @dataclass(frozen=True, slots=True)
 class LogicalCounts:
     qubit_count: int
@@ -73,3 +74,10 @@ class Estimates:
             "factory_fraction_percent": self.factory_fraction_percent,
             "factory_fraction": self.factory_fraction,
         }
+
+
+@dataclass(frozen=True)
+class FullResults:
+    estimates: Estimates
+    frontier: list[Estimates] | None
+    counts: LogicalCounts
