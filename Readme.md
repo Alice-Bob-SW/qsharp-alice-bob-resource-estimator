@@ -1,145 +1,201 @@
 [![ci](https://github.com/Alice-Bob-SW/qsharp-alice-bob-resource-estimator/actions/workflows/ci.yml/badge.svg)](https://github.com/Alice-Bob-SW/qsharp-alice-bob-resource-estimator/actions/workflows/ci.yml)
 
+  
+
 # Q# Resource Estimator for Alice & Bob's Architecture
 
-TL;DR Provide algorithmic resource counts from Q#, Qualtran, or explicit `(qubits, cx, ccx)` and get physical resource estimates for Alice & Bob's cat qubit + repetition code architecture.
+This project estimates the amount of physical resources required to run quantum algorithms on [Alice & Bob](https://alice-bob.com)'s quantum architecture, which uses cat qubits and repetition code as described in [arXiv: 2302.06639](https://arxiv.org/abs/2302.06639) (LDPC codes might be added in the future) .
 
-This repository relies on the Microsoft Azure Resource Estimator for Alice & Bob's architecture, using it as a rust library.
-It estimates physical resources from Q# or Qualtran programs or explicit algorithmic counts and exposes a Rust library, a command-line interface and a Python API for analysis workflows.
 
-The implementation follows the Azure Resource Estimator described in [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) and the Alice & Bob architecture assumptions detailed in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639).
-An elliptic-curve discrete logarithm example (from [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)) is included, along with Qualtran-based tooling for deriving logical resources.
+The current version of the code specifically targets Shor's algorithm for solving the elliptic curve discrete logarithm problem and its subroutines. It improves the [python project](https://github.com/ElieGouzien/elliptic_log_cat) from which the results of the paper [Phys. Rev. Lett. 131, 040602](https://dx.doi.org/10.1103/PhysRevLett.131.040602) ([arXiv: 2302.06639](https://arxiv.org/abs/2302.06639)) originate. 
 
-## Highlights
-- Input algorithm description from Q#, Qualtran or `(qubits, cx, ccx)` + target total error rates.
-- Cat qubit + repetition code architecture.
-- Code parameters (distance and average number of photons) and magic state factory choice optimized.
-- Rust library, command-line interface and Python bindings.
+The project consists of a Rust package containing a binary crate and a library crate as well as a Python API.
 
-## Inputs and Model
-The estimator consumes logical-level resources:
-- `N_L`: logical qubits
-- `D_L`: logical depth (cycles)
-- `N_T`: magic-state demand (Toffoli/CCX count)
 
-These are calculated internally from the algorithmic resource counts `(qubits, cx, ccx)` by adding routing qubits, factory qubits and calculating logical cyles following the explanation given in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639).
-You can provide `(qubits, cx, ccx)` in three ways:
-1. **Qualtran Bloq**: Qualtran calculates `(qubits, cx, ccx)`
+Big thanks to Mathias Soeken for the initial repository and for rebuilding the [Microsoft Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator) to support our architecture.
+
+Installation
+------------
+Two paths are possible.
+#### Cargo installation (Rust library and CLI only)
+
+This is a standard Cargo crate.
+
+Install Rust and the associated build toolchain for your operating system (Xcode Command Line Tools on macOS, build-essential on Linux, or Microsoft C++ Build Tools on Windows), see [Installation - The Rust Programming Language](https://doc.rust-lang.org/book/ch01-01-installation.html).
+`cargo build --release` will then do its magic and build the estimator. The executable files are also available from the CI artifacts.
+
+
+#### Pixi installation (Rust library, CLI and Python API)
+
+ To run the setup commands, it is recommended to have Pixi installed on your machine, which can be done by following the installation guide [here](https://pixi.prefix.dev/latest/installation/). 
+Indeed, this repository includes a `pixi.toml` for reproducible environments, so that the command
+```bash
+pixi install
+```
+will create and manage the project environment for you, including installing Python, Rust, and any required dependencies defined in the project configuration. In addition, you’ll need a working native build toolchain for your operating system (Xcode Command Line Tools on macOS, build-essential on Linux, or Microsoft C++ Build Tools on Windows) in order to compile the Rust library behind both the CLI and the Python API, see [Installation - The Rust Programming Language](https://doc.rust-lang.org/book/ch01-01-installation.html).
+
+In order to connect its Rust logic to Python, the project relies on [PyO3/maturin](https://github.com/pyo3/maturin). You can use `pixi run maturin --version` to check that it has been properly installed.
+
+In order to build the python interface, run 
+```
+pixi run maturin develop --uv
+```
+
+
+
+Program description
+-----
+
+The program takes as input 
+- a quantum algorithm described via its logical resource cost `(qubits, cx, ccx)` where
+	- `qubits` is the number of logical qubits,
+	- `cx` and `ccx` are the numbers of expensive logical gates involved.
+- a number representing the maximal logical error rate allowed for the target algorithm
+
+
+Based on these, the purpose of the program is to predict the physical resource preparation conditions under which the target algorithm may eventually be executed on Alice & Bob’s proprietary architecture with an error rate consistent with the desired tolerance.
+
+In practice, the machine’s execution costs, particularly energy costs, will depend heavily on the choice of easily adjustable machine parameters, such as the average number of photons per cat qubit, the distance of the repetition codes used to implement error correction, and the number of magic-state factories to provide. The program is designed precisely to calculate machine parameters that significantly reduce the combined product of the costs associated with parameter choices and the physical resource costs. 
+
+A physical resource cost, defined here as a number of physical qubits and a computation time on an Alice&Bob quantum machine, is computed at fixed parameters with [Microsoft Azure Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator).
+To do so, it uses the logical-to-physical mapping described in:
+- [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) for the base Q# Resource Estimator model
+- [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) for Alice & Bob architecture parameters regarding the cat qubit (average number of photons $\alpha^2$), the repetition code (code distance), and the different choices of magic state factories allowed
+
+
+The program's output then consists of:
+- Resources:
+	- Total number of physical qubits
+	- Runtime estimates
+	- Number of magic state factories
+	- Percentage of physical qubits involved in magic state production
+- Physical parameters (data qubits and magic state factories are considered separately):
+	- Code distance 
+	- Cat-qubit parameters (average photon number)
+- Total error rate
+
+
+The logical resource cost input `(qubits, cx, ccx)` can be provided in three different ways:
+1. **Qualtran Bloq** (only via the python interface): Qualtran calculates `(qubits, cx, ccx)`  
 2. **Q# program**: the interpreter extracts `(qubits, cx, ccx)`
 3. **Explicit resources**: you pass `(qubits, cx, ccx)` directly
 
-## Outputs
-The estimator returns physical-level estimates such as:
-- Total physical qubits
-- Runtime estimates
-- Total error rate
-- Code distance and cat-qubit parameters
-- Magic state factory code distance and average photon number
-- Number of magic state factories
-- Percentage of qubits involved in magic state production
+Note that **a few specific simplifying assumptions are performed** in the estimation of arbitrary Q# or Qualtran code. In particular, one-qubit gates are assumed to cost nothing compared to controlled gates and each CZ gate is exactly worth one CNOT gate, see [below](#supported-gates-and-their-costs) for more information.
 
-## Quickstart (Pixi)
-This repo includes a `pixi.toml` for reproducible environments.
+Usage
+-----
 
-To run the setup commands, you’ll need Pixi installed on your machine. This can be easily done by following the installation guide [here](https://pixi.prefix.dev/latest/installation/). Pixi will create and manage the project environment for you, including installing Python, Rust, and any required dependencies defined in the project configuration. In addition, you’ll need a working native build toolchain for your operating system (Xcode Command Line Tools on macOS, build-essential on Linux, or Microsoft C++ Build Tools on Windows), since maturin develop compiles Rust extensions locally.
+This mixed Rust/Python project is structured according to the recommendations from [Project Layout - Maturin User Guide](https://www.maturin.rs/project_layout.html).
 
-Install:
-```bash
-pixi install
-pixi run python --version
+#### CLI Usage (Rust)
+This Rust crate is designed as a library and also contains a standalone executable that estimates resources from either a Q# file or from the direct data of `(qubits, cx, ccx)`.
+Use the subcommand `help` to have the documentation of the executable.
+
+
+
+Basic shape:
+`anb_estimator [OPTIONS] <COMMAND>`
+
+If running through Cargo:
+`cargo run -- [OPTIONS] <COMMAND>`
+
+Commands:
+- resources - 
+Usage: `anb_estimator  resources <qubits> <cx> <ccx>`
+Directly passes logical resource cost.
+- file -
+Usage: `anb_estimator  file <path-to-qsharp-file>`
+Reads a Q# file.
+
+Global options (must appear before the command):
+- `-f` or `--frontier`
+Prints a frontier of good parameter sets instead of one estimate.
+- `--error-budget <topological> <magic> <rotation>`
+Detailed split into 3 components.
+- `--error-total <value>`
+Overall error budget. Equivalent to using `--error-budget <value>/2 <value>/2 0`. Default value is `<value>=0.333`
+
+Important constraint:
+You can use either --error-total or --error-budget, not both.
+
+Examples:
+- From explicit resources:
+`cargo run --  resources 40 10 10`
+- Frontier mode with file:
+`cargo run --  --frontier file qsharp\Adder.qs`
+
+Two shortcuts are proposed:
+- `cargo run --example=elliptic_log` uses as input the (logical) resources required to run the elliptic curve discrete logarithm problem with bit size 256 and window size 18, as computed in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)
+- `cargo run --example=from_qsharp` is equivalent to `cargo run --  --error-budget 0.0005 0.0005 0.0 file qsharp\Adder.qs`.
+
+
+
+#### Python Usage
+
+In order to be able to use `import anb_estimator` from python scripts in the repository, it is recommended to run them via 
+``` dash
+pixi run python script-name
 ```
 
-## Installation
-TODO: to review
-This repository includes a pixi.toml file to enable reproducible environments.
-
-To install the required environment and the Python extension, run the following commands:
-
-To run the setup commands, you’ll need Pixi installed on your machine. This can be easily done by following the installation guide here. Pixi will create and manage the project environment for you, including installing Python, Rust, and any required dependencies defined in the project configuration. In addition, you’ll need a working native build toolchain for your operating system (Xcode Command Line Tools on macOS, build-essential on Linux, or Microsoft C++ Build Tools on Windows), since maturin develop compiles Rust extensions locally.
-
-## Python Usage
-See `getting_started.ipynb` for an end-to-end walkthrough.
-
-The python package is named `anb_estimator`. The API exposes three main functions:
-- `estimate_qsharp_file(...)`
-- `estimate_from_qualtran(...)`
-- `estimate_logical_counts(...)`
-
-The additional arguments are
-- `frontier` — If `true`, compute and return the Pareto frontier as structured objects.
-- `error_total` — Overall error target; mutually exclusive with `error_budget`.
-- `error_budget` — Tuple `(target, meas, routing)` for an explicit split.
-
-### Example: estimate from a Q# file.
-```python
-import anb_estimator
-
-filename = "../qsharp/Adder.qs"
-single_qsharp, frontier, counts = anb_estimator.estimate_qsharp_file(
-    filename, frontier=True, error_total=None, error_budget=(0.0005, 0.0005, 0.0)
-)
+For an end-to-end walkthrough, see the notebook `doc/getting_started.ipynb` via 
+``` dash
+pixi run jupyter notebook
 ```
+(This should run on VSCode as well, but an issue have been reported on Windows platform where it was impossible to import `anb_estimator` if the notebook was not run via the above command.)
 
-### Example: ECC from Qualtran
+  
 
-Qualtran primitives for Shor/ECC resource derivations live in `ecc_primitives/`. A wrapper is provided that takes as an input any arbitrary Qualtran Bloq and outputs the resource estimation.
-```python
-import anb_estimator
+### Supported gates and their costs
 
-# Import Qualtran primitives
-from ecc_primitives.construction_helpers import (
-    ECCInstance,
-    create_ecc_circuit,
-)
 
-# Initialize secp256k1 curve parameters and window sizes for the ECC instance (see arXiv:2302.06639)
-cfg = ECCInstance(
-    n=256,  # bitsize
-    p=2**256 - 2**32 - 977,  # prime
-    wa=18,  # window size for elliptic curve multiplication
-    wm=6,  # window size for the integer multiplication
-    Gx=55066263022277343669578718895168534326250603453777594175500187360389116729240,  # x coordinate of the generator
-    Gy=32670510020758816978083085130507043184471273380659243275938904335757337482424,  # y coordinate of the generator
-    scalar=2026,  # private key to find
-)
+All cost assumptions made in this program have been designed with Shor's algorithm and its subroutines in mind. As such, they might not be relevant for the resource estimation of completely different algorithms.
 
-# Create Qualtran bloq
-ecc_circuit = create_ecc_circuit(cfg)
+#### In Q# code
 
-# Perform resource estimation
-ecc_result = anb_estimator.estimate_from_qualtran(
-    ecc_circuit,
-    frontier=False,
-    error_total=None,
-    error_budget=(0.333 * 0.5, 0.333 * 0.5, 0.0),
-)
-```
 
-### Example: estimate from explicit logical counts.
-```python
-import anb_estimator
+| Supported gates in Q# code                                      | cost in nb of cx | cost in nb of ccx |
+| --------------------------------------------------------------- | ---------------- | ----------------- |
+| `ccx`                                                           | 0                | 1                 |
+| `cx`, `cy` and `cz`                                             | 1                | 0                 |
+| `swap`                                                          | 3                | 0                 |
+| supported one-qubit gates<br>(`x`, `y`, `z`, `h`, `sadj`, `s` ) | 0                | 0                 |
+| measurements (`m`, `mresetz` & `reset`)                         | 0                | 0                 |
 
-estimate, frontier = anb_estimator.estimate_logical_counts(
-    qubits=100,
-    cx=2000,
-    ccx=300,
-    frontier=True,
-    error_total=0.333,
-    error_budget=None,
-)
-```
+Using other gate types should result in a runtime error for being not implemented.
 
-## Assumptions
-This estimator applies the logical-to-physical mapping described in:
-- [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) for the base Q# Resource Estimator model
-- [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) for Alice & Bob cat qubit architecture parameters
+For further reading:
+- language syntax: Q# reference ([Std.Intrinsic](https://learn.microsoft.com/en-us/qsharp/api/qsharp-lang/std.intrinsic/?source=recommendations), [Std.Canon | Microsoft Learn](https://learn.microsoft.com/en-us/qsharp/api/qsharp-lang/std.canon/), [Std.Measurement | Microsoft Learn](https://learn.microsoft.com/en-us/qsharp/api/qsharp-lang/std.measurement/)) 
+- list of primitives supported by Q#: source code [qdk/source/compiler/qsc\_eval/src/backend.rs  · microsoft/qdk](https://github.com/microsoft/qdk/blob/571815d2ac9459c472a6c2b56de34eab5f22f08f/source/compiler/qsc_eval/src/backend.rs#L173) 
+- exact implementation of our rules: local file `counter.rs` 
+
+
+#### In Qualtran code
+
+
+| Supported gates in Qualtran code | cost in nb of cx | cost in nb of ccx |
+| -------------------------------- | ---------------- | ----------------- |
+| `CNOT`                           | 1                | 0                 |
+| `Toffoli`                        | 0                | 1                 |
+| `TwoBitCSwap`                    | 2                | 1                 |
+| `C[CNOT]`                        | 0.5              | 0                 |
+| `And`                            | 0                | 0.5               |
+| any other qualtran gate          | 0                | 0                 |
+
+No error should be returned due to an unsupported gate since gates cost nothing if they do not appear in the table.
+
+For further reading:
+- language syntax: [Qualtran documentation](https://qualtran.readthedocs.io/en/latest/bloqs/index.html#bloqs-library)
+- exact implementation of our rules: local file `qualtran_interface.py`
+- arguments behind the values in this table: 
+	- see [arXiv: 2302.06639](https://arxiv.org/abs/2302.06639)  appC.10 for the case of `TwoBitCSwap`
+	- see [arXiv: 2302.06639](https://arxiv.org/abs/2302.06639)  app G.2 for the case of `And` gates with the application to adder circuits in mind
+	- for `C[CNOT]`, we assume the controlled bit to take a "random", unbiased value in practical applications in cryptography, hence `C[CNOT]` should apply CNOTs half of the time in average
+
+
 
 ## Authors
+
 - Mathias Soeken (initial version of the repository)
 - Élie Gouzien
 - Nicholas Gialouris
 - Axel Pappalardo
-
-## Acknowledgements
-Thanks to Mathias Soeken for the initial repository and for rebuilding the Q# resource estimator to support any architecture, including Alice & Bob's one.
-
