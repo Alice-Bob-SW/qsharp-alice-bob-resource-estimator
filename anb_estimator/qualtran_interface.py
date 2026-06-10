@@ -17,6 +17,9 @@ default_generalizer = (ignore_alloc_free, ignore_split_join, generalize_cvs)
 
 
 def _as_exact_int(value: Any, name: str) -> int:
+    """
+    Convert a value (typically a sympy expression) to an integer, ensuring that it is a concrete integer (not symbolic).
+    """
     if isinstance(value, Expr):
         if value.free_symbols or getattr(value, "is_integer", None) is not True:
             raise ValueError(f"{name} must be a concrete integer, got {value!r}")
@@ -34,8 +37,8 @@ def count_resources(
     -We count classically controlled CNOT as half a CNOT 
     -TwoBitCSwap are not native to A&B architectures
         and are decomposed in 2 CNOT + 1 Toffoli
-    -And gates are counted as half a Toffoli (they require half as many T states),
-        And.adjoint() are not counted
+    -And gates are counted as a Toffoli,
+        And.adjoint() are not counted, so the pair of Ands counts as 1 Toffoli in Gitney's adder, see 2302.06639 G.2
     -Single qubit gates are not counted
 
     Parameters
@@ -73,7 +76,6 @@ def count_resources(
         num_ccx += dict_sigma["Toffoli"]  # type: ignore
     if "And" in dict_sigma:  # 
         num_ccx += dict_sigma["And"]  # type: ignore
-    # And.adjoint() are not counted, so the pair of Ands counts as 1 Toffoli 
 
     return LogicalCounts(
         qubit_count=num_qubits,

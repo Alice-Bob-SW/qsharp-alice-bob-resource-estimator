@@ -1,6 +1,6 @@
 from math import floor
 from warnings import warn
-from typing import Optional, Sequence, Tuple, Union
+from typing import NamedTuple, Optional, Sequence, Tuple, Union
 from qualtran import Bloq  # type: ignore[import-untyped]
 from anb_estimator.qualtran_interface import count_resources
 
@@ -14,13 +14,17 @@ from anb_estimator.dataclass_wrappers import Estimates, FullResults, LogicalCoun
 
 
 
+class ErrorBudget(NamedTuple):
+    """Failure probabilities for one error-budget allocation"""
 
-ErrorBudget = Tuple[float, float, float] # `(Proba of >= 1 logical error, Proba of >= 1 faulty magic state distillation, Proba of >= 1 failed rotation synthesis)`
+    p_logical_error: float  # proba of >= 1 logical error
+    p_faulty_magic_state_distillation: float  # proba of >= 1 faulty magic state distillation
+    p_failed_rotation_synthesis: float  # proba of >= 1 failed rotation synthesis
 
 
-def _check_error_inputs(error_total: Optional[float], error_budget: Optional[ErrorBudget]) -> Tuple[Optional[float], Optional[ErrorBudget]]:
+def _check_error_inputs(error_total: Optional[float], error_budget: Optional[ErrorBudget]) -> None:
     """
-    Validates the error inputs and ensures that exactly one of `error_total` or `error_budget` is set, and that they are non-negative.
+    Ensure that exactly one of `error_total` or `error_budget` is set, and that they are non-negative.
     """
     if error_total is None and error_budget is None:
         warn(
@@ -36,10 +40,12 @@ def _check_error_inputs(error_total: Optional[float], error_budget: Optional[Err
             raise ValueError("error_budget must be a 3-tuple (Proba of >= 1 logical error, Proba of >= 1 faulty magic state distillation, Proba of >= 1 failed rotation synthesis)")
         if not all(0 <= x <= 1 for x in error_budget):
             raise ValueError("error_budget entries must be between 0 and 1")
-    return error_total, error_budget
 
 
-def _warn_if_arbitrary_circuit():
+def _warn_if_arbitrary_circuit() -> None:
+    """
+    Warns the user if the circuit is arbitrary as they may not be aware of the specific assumptions on the costs of logical gates in this program.
+    """
     warn("You should have a look at the Readme.md for assumptions on the costs of physical gates.")
 
 
@@ -47,6 +53,8 @@ def _warn_if_arbitrary_circuit():
 def _format_logical_counts_input(logical_counts: LogicalCounts) -> LogicalCounts:
     """
     Make sure that the logical counts are valid (non-negative integers) and convert them to integers if they are given as floats representing integers (e.g., 3.0).
+    in: LogicalCounts with potentially non-integer or negative values
+    out: LogicalCounts with non-negativeinteger values, or raises ValueError if the input is invalid
     """
     def _to_uint(k: str, val: float) -> int:
         if val < 0:
@@ -94,15 +102,15 @@ def estimate_logical_counts(
         raise ValueError("frontier must be a boolean")
 
     
-    safe_error_total, safe_error_budget = _check_error_inputs(error_total, error_budget)
+    _check_error_inputs(error_total, error_budget)
 
     estimate, frontier_data = _estimate_logical_counts(  
         _safe_counts.qubit_count,
         _safe_counts.cx_count,
         _safe_counts.ccx_count,
         frontier=frontier,
-        error_total=safe_error_total,
-        error_budget=safe_error_budget,
+        error_total=error_total,
+        error_budget=error_budget,
     )
 
     frontier_converted = [Estimates.from_rust(e) for e in frontier_data] if frontier else None
@@ -182,10 +190,10 @@ def estimate_qsharp_file(
     
     _warn_if_arbitrary_circuit()
 
-    safe_error_total, safe_error_budget = _check_error_inputs(error_total, error_budget)
+    _check_error_inputs(error_total, error_budget)
     
     estimate, frontier_data, counts = _estimate_qsharp_file( 
-        file_path, frontier=frontier, error_total=safe_error_total, error_budget=safe_error_budget
+        file_path, frontier=frontier, error_total=error_total, error_budget=error_budget
     )
     counts_converted = LogicalCounts.from_rust(counts)
     
