@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import NamedTuple
 
 
 from anb_estimator._native import LogicalCountsPy, EstimatesPy  # type: ignore[import-untyped]
@@ -81,3 +82,12 @@ class FullResults:
     estimates: Estimates
     frontier: list[Estimates] | None
     counts: LogicalCounts
+
+
+
+class ErrorBudget(NamedTuple):
+    """Failure probabilities for one error-budget allocation"""
+
+    p_logical_error: float  # proba of >= 1 logical error
+    p_faulty_magic_state_distillation: float  # proba of >= 1 faulty magic state distillation
+    p_failed_rotation_synthesis: float  # proba of >= 1 failed rotation synthesis

@@ -1,6 +1,6 @@
 from math import floor
 from warnings import warn
-from typing import NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Optional
 from qualtran import Bloq  # type: ignore[import-untyped]
 from anb_estimator.qualtran_interface import count_resources
 
@@ -10,16 +10,7 @@ from anb_estimator._native import (  # type: ignore[import-untyped]
 )
 
 
-from anb_estimator.dataclass_wrappers import Estimates, FullResults, LogicalCounts  # type: ignore[import-untyped]
-
-
-
-class ErrorBudget(NamedTuple):
-    """Failure probabilities for one error-budget allocation"""
-
-    p_logical_error: float  # proba of >= 1 logical error
-    p_faulty_magic_state_distillation: float  # proba of >= 1 faulty magic state distillation
-    p_failed_rotation_synthesis: float  # proba of >= 1 failed rotation synthesis
+from anb_estimator.dataclass_wrappers import Estimates, ErrorBudget, FullResults, LogicalCounts  # type: ignore[import-untyped]
 
 
 def _check_error_inputs(error_total: Optional[float], error_budget: Optional[ErrorBudget]) -> None:
@@ -62,15 +53,14 @@ def _format_logical_counts_input(logical_counts: LogicalCounts) -> LogicalCounts
         if val != floor(val):
             raise ValueError(f"{k} must be an integer or a float representing an integer (e.g., 3.0)")
         return int(floor(val))
-    
-    result = LogicalCounts(**{k: _to_uint(k, v) for k, v in logical_counts.to_dict().items()})
-    
+       
     if logical_counts.qubit_count == 0:
         raise ValueError("The number of qubits must be > 0")
     if logical_counts.ccx_count == 0:
         raise ValueError("The number of CCX gates must be > 0")  # Rust panics if the number of factories is 0.
-    return result
-
+    
+    return LogicalCounts(**{k: _to_uint(k, v) for k, v in logical_counts.to_dict().items()})
+ 
 
 def estimate_logical_counts(
     logical_counts: LogicalCounts,

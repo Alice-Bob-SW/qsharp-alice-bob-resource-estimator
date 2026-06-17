@@ -77,6 +77,10 @@ def count_resources(
     if "And" in dict_sigma:  # 
         num_ccx += dict_sigma["And"]  # type: ignore
 
+    # check that num_cx and num_ccx are half integers and not symbolic sympy expressions
+    twice_num_cx = _as_exact_int(2 * num_cx , "CX count")
+    twice_num_ccx = _as_exact_int(2 * num_ccx , "CCX count")
+
     return LogicalCounts(
         qubit_count=num_qubits,
         cx_count=floor(num_cx),
