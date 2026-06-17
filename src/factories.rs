@@ -124,7 +124,7 @@ impl estimates::Factory for ToffoliFactory {
     fn max_code_parameter(&self) -> Option<Cow<'_, Self::Parameter>> {
         Some(Cow::Owned(CodeParameter::new(
             self.code_distance as u64,
-            self.alpha_sq.sqrt(),
+            self.alpha_sq,
         )))
     }
 }
