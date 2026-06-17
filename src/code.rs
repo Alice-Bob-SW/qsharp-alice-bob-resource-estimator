@@ -85,12 +85,12 @@ impl Default for RepetitionCode {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 /// Store the code distance and average photon number |α|².
 pub struct CodeParameter {
-    distance: u64,
+    pub(crate) distance: u64,
     // Amplitude ɑ arXiv:2302.06639 (p. 3), average number of photons |ɑ|²
-    alpha_sq: f64,
+    pub(crate) alpha_sq: f64,
 }
 
 impl CodeParameter {

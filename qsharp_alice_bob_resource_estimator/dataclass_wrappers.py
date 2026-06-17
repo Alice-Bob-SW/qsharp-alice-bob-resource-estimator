@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import NamedTuple
 
 
@@ -15,17 +15,13 @@ class LogicalCounts:
     @classmethod
     def from_rust(cls, inner: LogicalCountsPy) -> "LogicalCounts":
         return cls(
-            qubit_count=int(inner.qubit_count),
-            cx_count=int(inner.cx_count),
-            ccx_count=int(inner.ccx_count),
+            qubit_count=inner.qubit_count,
+            cx_count=inner.cx_count,
+            ccx_count=inner.ccx_count,
         )
 
-    def to_dict(self) -> dict[str, int]:
-        return {
-            "qubit_count": self.qubit_count,
-            "cx_count": self.cx_count,
-            "ccx_count": self.ccx_count,
-        }
+    def as_dict(self) -> dict[str, int]:
+        return asdict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,33 +44,21 @@ class Estimates:
     @classmethod
     def from_rust(cls, inner: EstimatesPy) -> "Estimates":
         return cls(
-            physical_qubits=int(inner.physical_qubits),
-            runtime_seconds=float(inner.runtime_seconds),
-            runtime_hours=float(inner.runtime_hours),
-            total_error=float(inner.total_error),
-            code_distance=int(inner.code_distance),
-            code_alpha2=float(inner.code_alpha2),
-            factories=int(inner.factories),
-            factories_distance=int(inner.factories_distance),
-            factories_alpha2=float(inner.factories_alpha2),
-            factory_fraction_percent=float(inner.factory_fraction_percent),
-            factory_fraction=float(inner.factory_fraction),
+            physical_qubits=inner.physical_qubits,
+            runtime_seconds=inner.runtime_seconds,
+            runtime_hours=inner.runtime_hours,
+            total_error=inner.total_error,
+            code_distance=inner.code_distance,
+            code_alpha2=inner.code_alpha2,
+            factories=inner.factories,
+            factories_distance=inner.factories_distance,
+            factories_alpha2=inner.factories_alpha2,
+            factory_fraction_percent=inner.factory_fraction_percent,
+            factory_fraction=inner.factory_fraction,
         )
 
-    def to_dict(self) -> dict[str, float | int]:
-        return {
-            "physical_qubits": self.physical_qubits,
-            "runtime_seconds": self.runtime_seconds,
-            "runtime_hours": self.runtime_hours,
-            "total_error": self.total_error,
-            "code_distance": self.code_distance,
-            "code_alpha2": self.code_alpha2,
-            "factories": self.factories,
-            "factories_distance": self.factories_distance,
-            "factories_alpha2": self.factories_alpha2,
-            "factory_fraction_percent": self.factory_fraction_percent,
-            "factory_fraction": self.factory_fraction,
-        }
+    def as_dict(self) -> dict[str, float | int]:
+        return asdict(self)
 
 
 @dataclass(frozen=True)

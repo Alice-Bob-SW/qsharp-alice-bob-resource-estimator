@@ -33,12 +33,7 @@ def _check_error_inputs(error_total: Optional[float], error_budget: Optional[Err
             raise ValueError("error_budget entries must be between 0 and 1")
 
 
-def _warn_if_arbitrary_circuit() -> None:
-    """
-    Warns the user if the circuit is arbitrary as they may not be aware of the specific assumptions on the costs of logical gates in this program.
-    """
-    warn("You should have a look at the Readme.md for assumptions on the costs of physical gates.")
-
+ARBITRARY_CIRCUIT_WARN = "You should have a look at the Readme.md for assumptions on the costs of physical gates."
 
 
 def _format_logical_counts_input(logical_counts: LogicalCounts) -> LogicalCounts:
@@ -59,7 +54,7 @@ def _format_logical_counts_input(logical_counts: LogicalCounts) -> LogicalCounts
     if logical_counts.ccx_count == 0:
         raise ValueError("The number of CCX gates must be > 0")  # Rust panics if the number of factories is 0.
     
-    return LogicalCounts(**{k: _to_uint(k, v) for k, v in logical_counts.to_dict().items()})
+    return LogicalCounts(**{k: _to_uint(k, v) for k, v in logical_counts.as_dict().items()})
  
 
 def estimate_logical_counts(
@@ -138,7 +133,7 @@ def estimate_from_qualtran(
     except Exception as exc:
         raise AssertionError("bloq is not a valid qualtran Bloq") from exc
 
-    _warn_if_arbitrary_circuit()
+    warn(ARBITRARY_CIRCUIT_WARN)
 
     
     return estimate_logical_counts(
@@ -178,7 +173,7 @@ def estimate_qsharp_file(
     if not isinstance(frontier, bool):
         raise ValueError("frontier must be a boolean")
     
-    _warn_if_arbitrary_circuit()
+    warn(ARBITRARY_CIRCUIT_WARN)
 
     _check_error_inputs(error_total, error_budget)
     

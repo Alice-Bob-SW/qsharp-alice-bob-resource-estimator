@@ -3,6 +3,7 @@
 //! ! and explicit logical counts, returning structured results suitable for Python consumers.
 //! ! It leverages PyO3 to create Python-callable functions and classes.
 
+use num_traits::ToPrimitive;
 use pyo3::prelude::*; // brings Python, PyResult, PyModule, Bound, etc.
 use std::fmt;
 use std::rc::Rc;
@@ -10,6 +11,7 @@ use std::rc::Rc;
 use num_format::{Locale, ToFormattedString};
 
 use crate::estimates::make_budget;
+use crate::factories::ToffoliFactory;
 use crate::{AliceAndBobEstimates, CatQubit, LogicalCounts, RepetitionCode, ToffoliBuilder};
 use resource_estimator::estimates::PhysicalResourceEstimation;
 
@@ -77,7 +79,7 @@ fn _estimate_qsharp_file(
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
 
     // Put counts behind an Rc so we can both pass it into PRE and also derive a Python view
-    let counts = std::rc::Rc::new(
+    let counts = Rc::new(
         LogicalCounts::from_qsharp(filename)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.clone()))?,
     );
@@ -85,7 +87,7 @@ fn _estimate_qsharp_file(
 
     let estimation = PhysicalResourceEstimation::new(
         qec,
-        std::rc::Rc::new(qubit),
+        Rc::new(qubit),
         builder,
         counts.clone(), // share with PRE
         budget,
@@ -168,10 +170,13 @@ fn _estimate_logical_counts(
         let results = estimation
             .build_frontier()
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-        for r in results {
-            let est: AliceAndBobEstimates = r.into();
-            frontier_py.push(EstimatesPy::from(&est));
-        }
+        frontier_py = results
+            .into_iter()
+            .map(|r| {
+                let est: AliceAndBobEstimates = r.into();
+                EstimatesPy::from(&est)
+            })
+            .collect();
     }
 
     Ok((single_py, frontier_py))
@@ -267,6 +272,86 @@ impl fmt::Display for EstimatesPy {
 impl EstimatesPy {
     fn __str__(&self) -> String {
         self.to_string()
+    }
+}
+
+impl crate::AliceAndBobEstimates {
+    /// Runtime in seconds (converts from nanoseconds).
+    #[must_use]
+    pub fn runtime_seconds(&self) -> f64 {
+        // self.runtime() comes from the inner PhysicalResourceEstimationResult
+        num_traits::cast::<u64, f64>(self.runtime()).expect("runtime too large") / 1e9
+        // or: f64::from_u64(self.runtime()).expect("runtime too large") / 1e9
+    }
+
+    /// Runtime in hours (convenience).
+    #[must_use]
+    pub fn runtime_hours(&self) -> f64 {
+        self.runtime_seconds() / 3600.0
+    }
+
+    /// Code distance of the logical patch.
+    #[must_use]
+    pub fn code_distance(&self) -> u64 {
+        self.logical_patch().code_parameter().distance
+    }
+
+    /// Number of Toffoli factory copies.
+    #[must_use]
+    pub fn factories(&self) -> u64 {
+        self.toffoli_factory_part()
+            .map_or(0, resource_estimator::estimates::FactoryPart::copies)
+    }
+
+    /// Human-readable factory description (e.g. "9 (|ɑ|² = 12.83)").
+    #[must_use]
+    pub fn factories_description(&self) -> String {
+        format!(
+            "{}",
+            self.toffoli_factory_part()
+                .expect("No factory part")
+                .factory()
+        )
+    }
+
+    /// Fraction of qubits used by factories as a ratio in [0,1].
+    #[must_use]
+    pub fn factory_fraction_ratio(&self) -> f64 {
+        self.factory_fraction() / 100.0
+    }
+
+    /// (Optional) Physical qubits used by factories as u64, if you want it.
+    #[must_use]
+    pub fn physical_qubits_for_factories_u64(&self) -> u64 {
+        self.physical_qubits_for_factories()
+            .to_u64()
+            .expect("can't convert physical_qubits_for_factories to u64")
+    }
+
+    /// Factory code distance.
+    #[must_use]
+    pub fn factories_distance(&self) -> u64 {
+        let fact: &ToffoliFactory = self
+            .toffoli_factory_part()
+            .expect("No factory part")
+            .factory();
+        fact.code_parameter.distance
+    }
+
+    /// Average number of photons |α|² in each cat qubit.
+    #[must_use]
+    pub fn code_alpha2(&self) -> f64 {
+        self.logical_patch().code_parameter().alpha_sq
+    }
+
+    /// Average number of photons |α|² in each cat qubit used in factories.
+    #[must_use]
+    pub fn factories_alpha2(&self) -> f64 {
+        let fact = self
+            .toffoli_factory_part()
+            .expect("No factory part")
+            .factory();
+        fact.code_parameter.alpha_sq
     }
 }
 

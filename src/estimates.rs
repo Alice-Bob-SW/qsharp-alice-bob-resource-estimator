@@ -12,14 +12,6 @@ use resource_estimator::estimates::{
 
 use crate::{code::RepetitionCode, counter::LogicalCounts, factories::ToffoliFactory};
 
-/// Helper function to extract |α|² from factory description string.
-fn extract_alpha2(s: &str) -> Option<f64> {
-    let eq = s.rfind('=')?;
-    let after = s.get(eq + 1..)?.trim();
-    let num = after.trim_end_matches(')').trim();
-    num.parse::<f64>().ok()
-}
-
 /// Represents a physical resources estimate for Alice & Bob's architecture.
 pub struct AliceAndBobEstimates(
     PhysicalResourceEstimationResult<RepetitionCode, ToffoliFactory, LogicalCounts>,
@@ -28,7 +20,7 @@ pub struct AliceAndBobEstimates(
 impl AliceAndBobEstimates {
     #[must_use]
     /// Give a reference to the [`FactoryPart`] used in the estimate.
-    fn toffoli_factory_part(&self) -> Option<&FactoryPart<ToffoliFactory>> {
+    pub fn toffoli_factory_part(&self) -> Option<&FactoryPart<ToffoliFactory>> {
         self.factory_parts()[0].as_ref()
     }
 
@@ -75,98 +67,6 @@ impl AliceAndBobEstimates {
         });
 
         logical + magic_states
-    }
-
-    /// Runtime in seconds (converts from nanoseconds).
-    #[must_use]
-    pub fn runtime_seconds(&self) -> f64 {
-        // self.runtime() comes from the inner PhysicalResourceEstimationResult
-        num_traits::cast::<u64, f64>(self.runtime()).expect("runtime too large") / 1e9
-        // or: f64::from_u64(self.runtime()).expect("runtime too large") / 1e9
-    }
-
-    /// Runtime in hours (convenience).
-    #[must_use]
-    pub fn runtime_hours(&self) -> f64 {
-        self.runtime_seconds() / 3600.0
-    }
-
-    /// Code distance of the logical patch.
-    #[must_use]
-    pub fn code_distance(&self) -> u64 {
-        let s = self.logical_patch().code_parameter().to_string();
-        s.split_whitespace()
-            .next()
-            .and_then(|t| t.parse::<u64>().ok())
-            .expect("couldn't parse code distance")
-    }
-
-    /// Number of Toffoli factory copies.
-    #[must_use]
-    pub fn factories(&self) -> u64 {
-        self.toffoli_factory_part()
-            .map_or(0, resource_estimator::estimates::FactoryPart::copies)
-    }
-
-    /// Human-readable factory description (e.g. "9 (|ɑ|² = 12.83)").
-    #[must_use]
-    pub fn factories_description(&self) -> String {
-        format!(
-            "{}",
-            self.toffoli_factory_part()
-                .expect("No factory part")
-                .factory()
-        )
-    }
-
-    /// Fraction of qubits used by factories as a ratio in [0,1].
-    #[must_use]
-    pub fn factory_fraction_ratio(&self) -> f64 {
-        self.factory_fraction() / 100.0
-    }
-
-    /// (Optional) Physical qubits used by factories as u64, if you want it.
-    #[must_use]
-    pub fn physical_qubits_for_factories_u64(&self) -> u64 {
-        self.physical_qubits_for_factories()
-            .to_u64()
-            .expect("can't convert physical_qubits_for_factories to u64")
-    }
-
-    /// Factory code distance.
-    #[must_use]
-    pub fn factories_distance(&self) -> u64 {
-        let s = self
-            .toffoli_factory_part()
-            .expect("No factory part")
-            .factory()
-            .to_string();
-        s.split('(')
-            .next()
-            .unwrap_or_default()
-            .split_whitespace()
-            .next()
-            .unwrap_or("0")
-            .parse()
-            .expect("failed to parse factories distance")
-    }
-
-    /// Average number of photons |α|² in each cat qubit.
-    #[must_use]
-    pub fn code_alpha2(&self) -> f64 {
-        let s = self.logical_patch().code_parameter().to_string();
-        extract_alpha2(&s).expect("failed to parse code alpha2")
-    }
-
-    /// Average number of photons |α|² in each cat qubit used in factories.
-    #[must_use]
-    pub fn factories_alpha2(&self) -> f64 {
-        let s = self
-            .toffoli_factory_part()
-            .expect("No factory part")
-            .factory()
-            .to_string();
-        extract_alpha2(&s).expect("failed to parse factories alpha2")
     }
 }
 

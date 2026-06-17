@@ -1,4 +1,3 @@
-from math import floor
 from typing import Any, Tuple
 
 # Import Qualtran tools
@@ -9,24 +8,19 @@ from qualtran.resource_counting.generalizers import (  # type: ignore[import-unt
     ignore_alloc_free,
     generalize_cvs,
 )
-from sympy import Expr
 
 from qsharp_alice_bob_resource_estimator.dataclass_wrappers import LogicalCounts  # type: ignore[import-untyped]
 
 default_generalizer = (ignore_alloc_free, ignore_split_join, generalize_cvs)
 
 
-def _as_exact_int(value: Any, name: str) -> int:
-    """
-    Convert a value (typically a sympy expression) to an integer, ensuring that it is a concrete integer (not symbolic).
-    """
-    if isinstance(value, Expr):
-        if value.free_symbols or getattr(value, "is_integer", None) is not True:
-            raise ValueError(f"{name} must be a concrete integer, got {value!r}")
-        return int(value)
-
-    return int(value)
-
+def _round(value: Any, name: str):
+    """Round, but annotate if there is an error."""
+    try:
+        return round(value)
+    except Exception as e:
+        e.add_note(f"{name} count not convertible to integer (symbolic?); value: {value!r}")
+        raise
 
 def count_resources(
     bloq: Bloq,
@@ -38,7 +32,8 @@ def count_resources(
     -TwoBitCSwap are not native to A&B architectures
         and are decomposed in 2 CNOT + 1 Toffoli
     -And gates are counted as a Toffoli,
-        And.adjoint() are not counted, so the pair of Ands counts as 1 Toffoli in Gitney's adder, see 2302.06639 G.2
+        And.adjoint() are not counted, so the pair of Ands counts as 1 Toffoli in Gidney's adder,
+        see arXiv:2302.06639 G.2
     -Single qubit gates are not counted
 
     Parameters
@@ -54,13 +49,12 @@ def count_resources(
         number of cx needed for the Bloq
     num_ccx : int
         number of ccx needed for the Bloq
+
     """
-    num_qubits = _as_exact_int(get_cost_value(bloq, QubitCount()), "Bloq qubit count")
-    
+    num_qubits = _round(get_cost_value(bloq, QubitCount()), "Qubit")
 
     _, sigma = bloq.call_graph(graph_generalizer)
-    L_k = [k for k in sigma.keys()]
-    dict_sigma = {str(k): sigma[k] for k in L_k}
+    dict_sigma = {str(k): v for k, v in sigma.items()}
 
     num_cx = 0
     num_ccx = 0
@@ -77,12 +71,11 @@ def count_resources(
     if "And" in dict_sigma:  # 
         num_ccx += dict_sigma["And"]  # type: ignore
 
-    # check that num_cx and num_ccx are half integers and not symbolic sympy expressions
-    twice_num_cx = _as_exact_int(2 * num_cx , "CX count")
-    twice_num_ccx = _as_exact_int(2 * num_ccx , "CCX count")
+    num_cx = _round(num_cx, "CX")
+    num_ccx = _round(num_ccx, "CCX")
 
     return LogicalCounts(
         qubit_count=num_qubits,
-        cx_count=floor(num_cx),
-        ccx_count=floor(num_ccx)
+        cx_count=num_cx,
+        ccx_count=num_ccx,
     )
