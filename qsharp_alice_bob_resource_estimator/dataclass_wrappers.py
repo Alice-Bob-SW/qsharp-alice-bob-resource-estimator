@@ -5,7 +5,6 @@ from typing import NamedTuple
 from qsharp_alice_bob_resource_estimator._native import LogicalCountsPy, EstimatesPy  # type: ignore[import-untyped]
 
 
-
 @dataclass(frozen=True, slots=True)
 class LogicalCounts:
     qubit_count: int
@@ -15,9 +14,7 @@ class LogicalCounts:
     @classmethod
     def from_rust(cls, inner: LogicalCountsPy) -> "LogicalCounts":
         return cls(
-            qubit_count=inner.qubit_count,
-            cx_count=inner.cx_count,
-            ccx_count=inner.ccx_count,
+            qubit_count=inner.qubit_count, cx_count=inner.cx_count, ccx_count=inner.ccx_count
         )
 
     def as_dict(self) -> dict[str, int]:
@@ -66,7 +63,6 @@ class FullResults:
     estimates: Estimates
     frontier: list[Estimates] | None
     counts: LogicalCounts
-
 
 
 class ErrorBudget(NamedTuple):

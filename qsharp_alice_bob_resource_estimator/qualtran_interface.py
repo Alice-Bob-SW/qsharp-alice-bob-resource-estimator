@@ -22,13 +22,14 @@ def _round(value: Any, name: str):
         e.add_note(f"{name} count not convertible to integer (symbolic?); value: {value!r}")
         raise
 
+
 def count_resources(
     bloq: Bloq,
     graph_generalizer: Tuple[Any, ...] = default_generalizer,  # type: ignore
 ) -> LogicalCounts:
     """Count the number of qubits, cx and ccx required for a given qualtran Bloq.
 
-    -We count classically controlled CNOT as half a CNOT 
+    -We count classically controlled CNOT as half a CNOT
     -TwoBitCSwap are not native to A&B architectures
         and are decomposed in 2 CNOT + 1 Toffoli
     -And gates are counted as a Toffoli,
@@ -68,14 +69,10 @@ def count_resources(
 
     if "Toffoli" in dict_sigma:  # needs to be decomposed on A&B architecture
         num_ccx += dict_sigma["Toffoli"]  # type: ignore
-    if "And" in dict_sigma:  # 
+    if "And" in dict_sigma:  #
         num_ccx += dict_sigma["And"]  # type: ignore
 
     num_cx = _round(num_cx, "CX")
     num_ccx = _round(num_ccx, "CCX")
 
-    return LogicalCounts(
-        qubit_count=num_qubits,
-        cx_count=num_cx,
-        ccx_count=num_ccx,
-    )
+    return LogicalCounts(qubit_count=num_qubits, cx_count=num_cx, ccx_count=num_ccx)

@@ -68,7 +68,6 @@ impl ToffoliFactory {
 
         self.physical_qubits() * self.duration()
     }
-    
 }
 
 impl estimates::Factory for ToffoliFactory {
@@ -148,8 +147,7 @@ impl Display for ToffoliFactory {
         write!(
             f,
             "{} (|ɑ|² = {})",
-            self.code_parameter.distance,
-            self.code_parameter.alpha_sq
+            self.code_parameter.distance, self.code_parameter.alpha_sq
         )
     }
 }

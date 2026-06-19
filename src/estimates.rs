@@ -91,7 +91,7 @@ impl From<PhysicalResourceEstimationResult<RepetitionCode, ToffoliFactory, Logic
 impl Display for AliceAndBobEstimates {
     /// Print the final estimates.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f,)?;
+        writeln!(f)?;
         writeln!(f, "─────────────────────────────")?;
         writeln!(f, "# physical qubits:    {}", self.physical_qubits())?;
         writeln!(
@@ -129,7 +129,7 @@ impl Display for AliceAndBobEstimates {
 /// - `error_total` — If `Some(p)`, split the total error `p` into equal
 ///   topological and magic error components `(0.5p, 0.5p)` with rotations error set to `0.0`.
 /// - `error_budget` — If `Some((logical_error, magic_state_error, rotation_error))`, use these
-///    explicit per-component values.
+///   explicit per-component values.
 ///
 /// # Returns
 /// An [`ErrorBudget`] containing the Proba of >= 1 logical error, the proba of >= 1 faulty magic state distillation,
