@@ -314,7 +314,7 @@ impl crate::AliceAndBobEstimates {
         )
     }
 
-    /// Fraction of qubits used by factories as a ratio in [0,1].
+    /// Fraction of qubits used by factories as a ratio in \[0, 1\].
     #[must_use]
     pub fn factory_fraction_ratio(&self) -> f64 {
         self.factory_fraction() / 100.0

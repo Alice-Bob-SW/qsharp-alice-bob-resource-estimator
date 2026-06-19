@@ -93,35 +93,36 @@ Use the subcommand `help` to have the documentation of the executable.
 
 
 
-Basic shape:
-`cargo run -- [OPTIONS] <COMMAND>`
+Basic form is either (depending if you are still developing or if you installed the executable):
+* `cargo run -- [OPTIONS] <COMMAND>`
+* `qsharp_alice_bob_resource_estimator_cli [OPTIONS] <COMMAND>`
 
 Commands:
-- resources - 
-Usage: `cargo  resources <qubits> <cx> <ccx>`
-Directly passes logical resource cost.
-- file -
-Usage: `cargo  file <path-to-qsharp-file>`
-Reads a Q# file.
+- resources 
+  `cargo run -- resources <qubits> <cx> <ccx>`
+  Directly passes logical resource cost.
+- file
+  `cargo run -- file <path-to-qsharp-file>`
+  Reads a Q# file.
 
 Global options (must appear before the command):
 - `-f` or `--frontier`
-Prints a frontier of good parameter sets instead of one estimate.
+  Prints a frontier of good parameter sets instead of one estimate.
 - `--error-budget <topological> <magic> <rotation>`
-Detailed split into 3 components.
+  Detailed split into 3 components.
 - `--error-total <value>`
-Overall error budget. Equivalent to using `--error-budget <value>/2 <value>/2 0`. Default value is `<value>=0.333`
+  Overall error budget. Equivalent to using `--error-budget <value>/2 <value>/2 0`. Default value is `<value>=0.333`
 
 Important constraint:
 You can use either --error-total or --error-budget, not both.
 
 Examples:
 - From explicit resources:
-`cargo run --  resources 40 10 10`
+  `cargo run --  resources 40 10 10`
 - Frontier mode with file:
-`cargo run --  --frontier file qsharp\Adder.qs`
+  `cargo run --  --frontier file qsharp\Adder.qs`
 
-Two shortcuts are proposed:
+Two example files can be executed:
 - `cargo run --example=elliptic_log` uses as input the (logical) resources required to run the elliptic curve discrete logarithm problem with bit size 256 and window size 18, as computed in [arXiv:2302.06639](https://arxiv.org/abs/2302.06639)
 - `cargo run --example=from_qsharp` is equivalent to `cargo run --  --error-budget 0.0005 0.0005 0.0 file qsharp\Adder.qs`.
 
@@ -129,16 +130,16 @@ Two shortcuts are proposed:
 
 #### Python Usage
 
-In order to be able to use `import anb_estimator` from python scripts in the repository, it is recommended to run them via 
-``` dash
+In order to be able to use `import qsharp_alice_bob_resource_estimator` from python scripts in the repository, it is recommended to run them via 
+```bash
 pixi run python script-name
 ```
 
 For an end-to-end walkthrough, see the notebook `doc/getting_started.ipynb` via 
-``` dash
+```bash
 pixi run jupyter notebook
 ```
-(This should run on VSCode as well, but an issue have been reported on Windows platform where it was impossible to import `anb_estimator` if the notebook was not run via the above command.)
+(This should run on VSCode as well, but an issue have been reported on Windows platform where it was impossible to import `qsharp-alice_bob_resource_estimator` if the notebook was not run via the above command.)
 
   
 
