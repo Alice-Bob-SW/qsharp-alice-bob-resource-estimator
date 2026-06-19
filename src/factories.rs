@@ -80,9 +80,9 @@ impl estimates::Factory for ToffoliFactory {
     /// The routing qubit under the factories is associated with the compute qubits.
     ///
     /// Note that the formula might not be exact when factories internal distance is
-    /// different than the main code distance, but it is negligeable.
-    /// Additionnaly, note that that is might not even be a real problem as only one of the 4
-    /// factory qubit needs to be accessed through all it's physical qubits.
+    /// different than the main code distance, but it is negligible.
+    /// Additionally, note that this might not even be a real problem as only one of the 4
+    /// factory qubits needs to be accessed through all its physical qubits.
     fn physical_qubits(&self) -> u64 {
         let num_logical_qubits: u64 = 4;
         let horizontal_routing_qubits: u64 = 1;
