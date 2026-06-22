@@ -1,1 +1,6 @@
 /target
+*.pyc
+**/.DS_Store
+.DS_Store
+*.so
+*.dylib

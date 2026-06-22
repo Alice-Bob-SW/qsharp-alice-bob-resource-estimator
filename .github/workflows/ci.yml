@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
 
-env: 
+env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: full
 
@@ -37,7 +37,7 @@ jobs:
         run: cargo fmt --check
       - name: clippy
         continue-on-error: true
-        run: cargo clippy -- -D warnings 
+        run: cargo clippy -- -D warnings
       - name: Build debug
         run: cargo build
       - name: build release
@@ -45,8 +45,8 @@ jobs:
       - name: Save executable
         uses: actions/upload-artifact@v4
         with:
-          name: ${{matrix.os}}-qsharp-alice-bob-resource-estimator
-          path: target/release/qsharp-alice-bob-resource-estimator${{ runner.os == 'Windows' && '.exe' || ''}} 
+          name: ${{matrix.os}}-qsharp_alice_bob_resource_estimator_cli
+          path: target/release/qsharp_alice_bob_resource_estimator_cli${{ runner.os == 'Windows' && '.exe' || ''}}
       - name: test
         run: cargo test
       - name: example elliptic_log
@@ -60,3 +60,38 @@ jobs:
         with:
           name: ${{matrix.os}}-doc
           path: target/doc
+
+  python: 
+    # This part was entirely vibecoded
+    name: Python build & lint - ${{matrix.os}}
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Matches the platforms declared in pixi.toml (linux-64, osx-arm64, win-64).
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install rust (needed by maturin to compile the extension)
+        run: rustup update stable && rustup default stable
+      - name: Set up pixi (Linux/macOS) 
+        # It would be cleaner to use `prefix-dev/setup-pixi@v0.8.1'
+        # but it is not allowed "because all actions must be from a repository owned by Alice-Bob-SW or created by GitHub."
+        if: runner.os != 'Windows'
+        run: |
+          curl -fsSL https://pixi.sh/install.sh | bash
+          echo "$HOME/.pixi/bin" >> "$GITHUB_PATH"
+      - name: Set up pixi (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          iwr -useb https://pixi.sh/install.ps1 | iex
+          echo "$env:USERPROFILE\.pixi\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        shell: pwsh
+      - name: Build and install the native extension (maturin develop)
+        run: pixi run -e dev maturin develop
+      - name: Ruff lint
+        run: pixi run -e dev ruff check qsharp_alice_bob_resource_estimator
+      - name: Ruff format check
+        run: pixi run -e dev ruff format --check qsharp_alice_bob_resource_estimator
+      - name: Import smoke test
+        run: pixi run -e dev python -c "import qsharp_alice_bob_resource_estimator; from qsharp_alice_bob_resource_estimator import estimate_logical_counts, LogicalCounts; print('qsharp_alice_bob_resource_estimator import OK')"

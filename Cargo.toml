@@ -1,16 +1,39 @@
 [package]
-name = "qsharp-alice-bob-resource-estimator"
-version = "0.1.0"
+name = "qsharp_alice_bob_resource_estimator"
+version = "0.2.0"
 edition = "2021"
+description = "A resource estimator for running quantum algorithms on Alice and Bob's hardware."
+readme = "Readme.md"
+keywords = ["quantum", "qsharp", "resource-estimation"]
+categories = ["science"]
+
+[lib]
+# Build both the normal Rust lib and the Python extension (.so/.pyd)
+name = "qsharp_alice_bob_resource_estimator"
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "qsharp_alice_bob_resource_estimator_cli"
+path = "src/main.rs"
+required-features = ["cli"]
+
+[features]
+default = ['cli']
+python = ["dep:pyo3", "pyo3/extension-module"]
+cli = ["dep:clap"]
+
 
 [dependencies]
+pyo3 = { version = "0.25", optional = true }
 anyhow = "1.0.81"
-clap = { version = "4.5.4", features = ["derive"] }
+clap = { version = "4.5.4", features = ["derive"], optional = true}
 num-bigint = "0.4"
 num-complex = "0.4"
 num-traits = "0.2"
 qsc = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.6.0" }
 resource_estimator = { git = "https://github.com/microsoft/qsharp.git", tag = "v1.6.0" }
+num-format = "0.4.4"
+
 
 [lints.clippy]
 mod_module_files = "warn"
@@ -19,4 +42,3 @@ unwrap_used = "warn"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
-

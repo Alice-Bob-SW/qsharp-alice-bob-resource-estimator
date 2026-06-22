@@ -45,8 +45,7 @@ use crate::{code::CodeParameter, CatQubit, RepetitionCode};
 /// Value 1/κ₂ = 100 ns and κ₁/κ₂ = 1e-5 are hard-coded.
 #[derive(Clone, PartialEq)]
 pub struct ToffoliFactory {
-    code_distance: usize,
-    alpha_sq: f64,
+    pub(crate) code_parameter: CodeParameter,
     error_probability: f64,
     acceptance_probability: f64,
     steps: usize,
@@ -81,14 +80,14 @@ impl estimates::Factory for ToffoliFactory {
     /// The routing qubit under the factories is associated with the compute qubits.
     ///
     /// Note that the formula might not be exact when factories internal distance is
-    /// different than the main code distance, but it is negligeable.
-    /// Additionnaly, note that that is might not even be a real problem as only one of the 4
-    /// factory qubit needs to be accessed through all it's physical qubits.
+    /// different than the main code distance, but it is negligible.
+    /// Additionally, note that this might not even be a real problem as only one of the 4
+    /// factory qubits needs to be accessed through all its physical qubits.
     fn physical_qubits(&self) -> u64 {
         let num_logical_qubits: u64 = 4;
         let horizontal_routing_qubits: u64 = 1;
 
-        (num_logical_qubits + horizontal_routing_qubits) * (2 * self.code_distance as u64 - 1)
+        (num_logical_qubits + horizontal_routing_qubits) * (2 * self.code_parameter.distance - 1)
     }
 
     /// Average duration of the magic state preparation.
@@ -109,7 +108,7 @@ impl estimates::Factory for ToffoliFactory {
         // (vs 89 in arXiv:2302.06639 (p. 32))
         // Complete formula is: π/(8 |α|^2 sqrt(2κ₁κ₂)). Using it would allow to
         // change κ₂ at κ₁/κ₂ constant.
-        let gate_time = 89.2 * t / self.alpha_sq;
+        let gate_time = 89.2 * t / self.code_parameter.alpha_sq;
 
         f64::from_usize(self.steps)
             .map(|steps| (gate_time * steps / self.acceptance_probability).round())
@@ -121,10 +120,10 @@ impl estimates::Factory for ToffoliFactory {
         1
     }
 
-    fn max_code_parameter(&self) -> Option<Cow<Self::Parameter>> {
+    fn max_code_parameter(&self) -> Option<Cow<'_, Self::Parameter>> {
         Some(Cow::Owned(CodeParameter::new(
-            self.code_distance as u64,
-            self.alpha_sq.sqrt(),
+            self.code_parameter.distance,
+            self.code_parameter.alpha_sq,
         )))
     }
 }
@@ -145,7 +144,11 @@ impl PartialOrd for ToffoliFactory {
 
 impl Display for ToffoliFactory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} (|ɑ|² = {})", self.code_distance, self.alpha_sq)
+        write!(
+            f,
+            "{} (|ɑ|² = {})",
+            self.code_parameter.distance, self.code_parameter.alpha_sq
+        )
     }
 }
 
@@ -162,106 +165,91 @@ impl Default for ToffoliBuilder {
     fn default() -> Self {
         let factories = vec![
             ToffoliFactory {
-                code_distance: 3,
-                alpha_sq: 3.75,
+                code_parameter: CodeParameter::new(3, 3.75),
                 error_probability: 1.05e-3,
                 steps: 23,
                 acceptance_probability: 0.84,
             },
             ToffoliFactory {
-                code_distance: 3,
-                alpha_sq: 5.08,
+                code_parameter: CodeParameter::new(3, 5.08),
                 error_probability: 1.02e-4,
                 steps: 29,
                 acceptance_probability: 0.745,
             },
             ToffoliFactory {
-                code_distance: 3,
-                alpha_sq: 5.32,
+                code_parameter: CodeParameter::new(3, 5.32),
                 error_probability: 8.14e-5,
                 steps: 35,
                 acceptance_probability: 0.66,
             },
             ToffoliFactory {
-                code_distance: 5,
-                alpha_sq: 7.15,
+                code_parameter: CodeParameter::new(5, 7.15),
                 error_probability: 4.62e-6,
                 steps: 46,
                 acceptance_probability: 0.456,
             },
             ToffoliFactory {
-                code_distance: 5,
-                alpha_sq: 8.18,
+                code_parameter: CodeParameter::new(5, 8.18),
                 error_probability: 7.00e-7,
                 steps: 53,
                 acceptance_probability: 0.362,
             },
             ToffoliFactory {
-                code_distance: 5,
-                alpha_sq: 8.38,
+                code_parameter: CodeParameter::new(5, 8.38),
                 error_probability: 5.36e-7,
                 steps: 60,
                 acceptance_probability: 0.288,
             },
             ToffoliFactory {
-                code_distance: 7,
-                alpha_sq: 9.71,
+                code_parameter: CodeParameter::new(7, 9.71),
                 error_probability: 6.14e-8,
                 steps: 73,
                 acceptance_probability: 0.148,
             },
             ToffoliFactory {
-                code_distance: 7,
-                alpha_sq: 10.76,
+                code_parameter: CodeParameter::new(7, 10.76),
                 error_probability: 8.40e-9,
                 steps: 81,
                 acceptance_probability: 0.105,
             },
             ToffoliFactory {
-                code_distance: 7,
-                alpha_sq: 11.06,
+                code_parameter: CodeParameter::new(7, 11.06),
                 error_probability: 5.16e-9,
                 steps: 89,
                 acceptance_probability: 0.0727,
             },
             ToffoliFactory {
-                code_distance: 9,
-                alpha_sq: 11.64,
+                code_parameter: CodeParameter::new(9, 11.64),
                 error_probability: 2.28e-9,
                 steps: 104,
                 acceptance_probability: 0.0262,
             },
             ToffoliFactory {
-                code_distance: 9,
-                alpha_sq: 12.83,
+                code_parameter: CodeParameter::new(9, 12.83),
                 error_probability: 2.30e-10,
                 steps: 113,
                 acceptance_probability: 0.0154,
             },
             ToffoliFactory {
-                code_distance: 9,
-                alpha_sq: 13.44,
+                code_parameter: CodeParameter::new(9, 13.44),
                 error_probability: 7.36e-11,
                 steps: 122,
                 acceptance_probability: 0.00975,
             },
             ToffoliFactory {
-                code_distance: 19,
-                alpha_sq: 17.35,
+                code_parameter: CodeParameter::new(19, 17.35),
                 error_probability: 7.90e-12,
                 steps: 9576,
                 acceptance_probability: 1.0,
             },
             ToffoliFactory {
-                code_distance: 21,
-                alpha_sq: 18.94,
+                code_parameter: CodeParameter::new(21, 18.94),
                 error_probability: 5.40e-13,
                 steps: 14112,
                 acceptance_probability: 1.0,
             },
             ToffoliFactory {
-                code_distance: 23,
-                alpha_sq: 20.53,
+                code_parameter: CodeParameter::new(23, 20.53),
                 error_probability: 3.74e-14,
                 steps: 21344,
                 acceptance_probability: 1.0,
@@ -293,7 +281,7 @@ impl FactoryBuilder<RepetitionCode> for ToffoliBuilder {
         _magic_state_type: usize,
         output_error_rate: f64,
         _max_code_parameter: &CodeParameter,
-    ) -> Option<Vec<Cow<Self::Factory>>> {
+    ) -> Option<Vec<Cow<'_, Self::Factory>>> {
         assert!(
             output_error_rate > self.lowest_error_probability,
             "Requested error probability is too low"
