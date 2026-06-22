@@ -13,6 +13,7 @@ python = ">=3.11,<3.14"
 maturin = ">=1.13.3,<2"
 uv = ">=0.10.2,<0.11"
 numba = ">=0.63.1"
+rust = ">=1.96.0,<1.97"
 
 [feature.dev.dependencies]
 ruff = "*"
