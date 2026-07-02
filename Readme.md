@@ -8,7 +8,7 @@ The current version of the code specifically targets Shor's algorithm for solvin
 
 The project consists of a Rust package containing a binary crate and a library crate as well as a Python API.
 
-Big thanks to Mathias Soeken for the initial repository and for rebuilding the [Microsoft Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator) to support our architecture.
+Big thanks to Mathias Soeken for the initial repository and for rebuilding the [Microsoft Q# resource estimator](https://github.com/microsoft/qdk/tree/main/source/resource_estimator) (in its version [1.6](https://github.com/microsoft/qdk/releases?page=3#release-v1.6.0) at the moment) to support our architecture.
 
 ## Installation
 
@@ -42,7 +42,7 @@ The program takes as input
 - a quantum algorithm described via its logical resource cost `(qubits, cx, ccx)` where
 	- `qubits` is the number of logical qubits,
 	- `cx` and `ccx` are the numbers of expensive logical gates involved.
-- a number representing the maximal logical error rate allowed for the target algorithm
+- an "error budget" in the sense of [arXiv:2311.05801](https://arxiv.org/abs/2311.05801), which represents the maximal logical error rates allowed for the target algorithm
 
 Based on these, the purpose of the program is to predict the physical resource preparation conditions under which the target algorithm may eventually be executed on Alice & Bob’s proprietary architecture with an error rate consistent with the desired tolerance.
 
@@ -50,8 +50,9 @@ In practice, the machine’s execution costs, particularly energy costs, will de
 
 A physical resource cost, defined here as a number of physical qubits and a computation time on an Alice&Bob quantum machine, is computed at fixed parameters with [Microsoft Azure Q# resource estimator](https://github.com/microsoft/qsharp/tree/main/resource_estimator).
 To do so, it uses the logical-to-physical mapping described in:
-- [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) for the base Q# Resource Estimator model
-- [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) for Alice & Bob architecture parameters regarding the cat qubit (average number of photons $\alpha^2$), the repetition code (code distance), and the different choices of magic state factories allowed
+- [arXiv:2311.05801](https://arxiv.org/abs/2311.05801) for the base Q# Resource Estimator model,
+- [arXiv:2302.06639](https://arxiv.org/abs/2302.06639) for Alice & Bob architecture parameters regarding the cat qubit (average number of photons $\alpha^2$), the repetition code (code distance), and the different choices of magic state factories allowed,
+- the function `logical_depth` from `src/counter.rs` for the logical_depths attributed to `cx` and `ccx` gates in the sense of [arXiv:2311.05801](https://arxiv.org/abs/2311.05801), i.e. how many logical cycles are necessary for their executions.
 
 The program's output then consists of:
 - Resources:
@@ -144,7 +145,8 @@ For further reading:
 | `Toffoli`                        | 0                | 1                 |
 | `TwoBitCSwap`                    | 2                | 1                 |
 | `C[CNOT]`                        | 0.5              | 0                 |
-| `And`                            | 0                | 0.5               |
+| `And`                            | 0                | 1                 |
+| `And.adjoint()`                  | 0                | 0                 |
 | any other qualtran gate          | 0                | 0                 |
 
 No error should be returned due to an unsupported gate since gates cost nothing if they do not appear in the table.
